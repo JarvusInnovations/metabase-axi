@@ -5,6 +5,8 @@ import { databaseMetadata, listDatabases } from "../src/metabase/database.js";
 import { runDataset } from "../src/metabase/dataset.js";
 import { search } from "../src/metabase/search.js";
 import { listCollections } from "../src/metabase/collection.js";
+import { getCard, listCards } from "../src/metabase/card.js";
+import { getDashboard, listDashboards } from "../src/metabase/dashboard.js";
 
 /**
  * Live integration tests against a real instance. Skipped unless METABASE_URL +
@@ -69,5 +71,23 @@ describe.skipIf(!live)("live metabase (api key)", () => {
   it("searches and lists collections", async () => {
     expect(Array.isArray(await search(client(), "a"))).toBe(true);
     expect(Array.isArray(await listCollections(client()))).toBe(true);
+  });
+
+  it("lists and fetches a card", async () => {
+    const cards = await listCards(client(), "all");
+    expect(Array.isArray(cards)).toBe(true);
+    if (cards.length) {
+      const card = await getCard(client(), cards[0].id);
+      expect(card.id).toBe(cards[0].id);
+    }
+  });
+
+  it("lists and fetches a dashboard", async () => {
+    const dashboards = await listDashboards(client());
+    expect(Array.isArray(dashboards)).toBe(true);
+    if (dashboards.length) {
+      const dash = await getDashboard(client(), dashboards[0].id);
+      expect(dash.id).toBe(dashboards[0].id);
+    }
   });
 });
