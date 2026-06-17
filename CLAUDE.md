@@ -27,6 +27,14 @@ The **specops** skill carries the full methodology — invoke it (the skill trig
 Query the DAG: `.claude/skills/specops/scripts/specops next` (what to work on next) and
 `.claude/skills/specops/scripts/specops dag` (graph).
 
+## Public repo — no client/host names
+
+This repository is **public**. Never commit client, project, or host names, real
+hostnames/URLs, schema/table/database names, or any secret picked up from the developer's
+other work or live instances. Use generic placeholders (`metabase.example.org`, `SELECT 1`)
+in specs, code, tests, and fixtures. Credentials for testing come from the environment at
+run time, never from committed files.
+
 ## House rules (from global config)
 
 - TypeScript via **bun** (`bun add`/`bun run`); never edit `package.json` deps by hand.
