@@ -10,8 +10,15 @@ profiles so you never query the wrong deployment by accident.
 It leads with the **analyst** workflow — run SQL/MBQL, execute saved questions, introspect
 schema, search content, and browse dashboards/collections from the terminal.
 
-> Status: early development. The spec is the source of truth — see [`specs/`](specs/) — and
+> Status: early development (Tier 1 — query & explore — is shipped; see the
+> [Roadmap](#roadmap)). The spec is the source of truth — see [`specs/`](specs/) — and
 > work-in-flight is tracked in [`plans/`](plans/). Built with [specops](https://github.com/JarvusInnovations/specops).
+
+## Install
+
+```sh
+npm install -g metabase-axi      # or: bun add -g metabase-axi
+```
 
 ## Setup
 
@@ -37,6 +44,25 @@ Mint an API key in Metabase admin (Settings → API keys). Credentials are store
 | `metabase-axi collection list` | Browse the collection tree |
 | `metabase-axi auth\|doctor` | Credentials + health |
 | `metabase-axi setup hooks` | Install the SessionStart ambient hook |
+
+Run `metabase-axi --help` for the full command list, or `metabase-axi <command> --help` for
+any command's usage.
+
+## Roadmap
+
+Capability is rolled out in tiers, analyst-first. Reads come before writes by design —
+see [`specs/principles.md`](specs/principles.md).
+
+| Tier | Scope | Status |
+|---|---|---|
+| **1 — Query & explore** | Run SQL/MBQL, execute & inspect saved questions, schema introspection (incl. table/field descriptions), search, browse dashboards & collections, export to file | ✅ Shipped |
+| **2 — Authoring** | Create & edit cards, dashboards, and collections | 🔜 Planned |
+| **3 — Operations** | Users, permission groups, settings, instance health/audit | 🔜 Planned |
+| **4 — Deferred** | Pulses/alerts, public & embed links, comments, timelines, revisions, Enterprise endpoints | ⏳ Later |
+
+All write operations (Tier 2+) mutate a shared, often production instance — they land
+deliberately, behind explicit instance selection. See
+[`specs/architecture.md`](specs/architecture.md#command-surface--roadmap) for the full surface.
 
 ## Development
 

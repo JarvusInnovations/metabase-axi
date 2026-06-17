@@ -23,7 +23,8 @@
     "build": "tsc && chmod +x dist/bin/metabase-axi.js",
     "dev": "bun bin/metabase-axi.ts",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@toon-format/toon": "^2.3.0",
@@ -33,5 +34,23 @@
     "@types/node": "^25.9.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JarvusInnovations/metabase-axi.git"
+  },
+  "homepage": "https://github.com/JarvusInnovations/metabase-axi#readme",
+  "bugs": {
+    "url": "https://github.com/JarvusInnovations/metabase-axi/issues"
+  },
+  "author": "Jarvus Innovations",
+  "keywords": [
+    "metabase",
+    "axi",
+    "cli",
+    "agent",
+    "sql",
+    "analytics",
+    "toon"
+  ]
 }
