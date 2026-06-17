@@ -1,0 +1,57 @@
+import { describe, it, expect } from "vitest";
+import { runAxiCli } from "axi-sdk-js";
+import { cliOptions, TOP_HELP } from "../src/cli.js";
+import { readVersion } from "../src/meta.js";
+import { homeCommand } from "../src/commands/home.js";
+import { queryCommand } from "../src/commands/query.js";
+
+/** Run the CLI end-to-end with captured stdout. */
+async function run(argv: string[]): Promise<string> {
+  const chunks: string[] = [];
+  await runAxiCli(cliOptions({ argv, stdout: { write: (c: string) => chunks.push(c) } }));
+  return chunks.join("");
+}
+
+describe("metabase-axi cli (scaffold)", () => {
+  it("prints TOP_HELP on --help", async () => {
+    const out = await run(["--help"]);
+    expect(out).toBe(TOP_HELP);
+    expect(out).toContain("metabase-axi query --help");
+  });
+
+  it("prints the package version on --version", async () => {
+    const out = await run(["--version"]);
+    expect(out.trim()).toBe(readVersion());
+  });
+
+  it("renders a structured error for an unknown command", async () => {
+    const out = await run(["bogus"]);
+    expect(out).toContain("Unknown command");
+  });
+
+  it("renders per-command help via getCommandHelp", async () => {
+    const out = await run(["query", "--help"]);
+    expect(out).toContain("usage: metabase-axi query");
+    expect(out).toContain("--csv-out");
+  });
+
+  it("every Tier 0/1 command is registered and returns a not-implemented notice", async () => {
+    for (const cmd of ["auth", "doctor", "setup", "card", "db", "search", "dashboard", "collection"]) {
+      const out = await run([cmd]);
+      expect(out, cmd).toContain("not implemented yet");
+    }
+  });
+
+  it("home runs without throwing and its help includes --help and <command> --help", async () => {
+    const out = await homeCommand();
+    const help = (out.help as string[]) ?? [];
+    expect(Array.isArray(out.help)).toBe(true);
+    expect(help.some((h) => h.includes("metabase-axi --help"))).toBe(true);
+    expect(help.some((h) => h.includes("metabase-axi <command> --help"))).toBe(true);
+  });
+
+  it("query stub returns a not-implemented notice", async () => {
+    const out = await queryCommand([]);
+    expect(out.message).toContain("not implemented");
+  });
+});
