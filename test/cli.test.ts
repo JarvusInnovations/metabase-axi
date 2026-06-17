@@ -35,8 +35,8 @@ describe("metabase-axi cli (scaffold)", () => {
   });
 
   it("still-stubbed commands return a not-implemented notice", async () => {
-    // Shrinks as commands are implemented; auth/doctor are live as of config-and-auth.
-    for (const cmd of ["setup", "card", "db", "search", "dashboard", "collection"]) {
+    // Shrinks as commands are implemented.
+    for (const cmd of ["setup", "card", "dashboard"]) {
       const out = await run([cmd]);
       expect(out, cmd).toContain("not implemented yet");
     }

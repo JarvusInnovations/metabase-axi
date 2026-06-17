@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { MetabaseClient } from "../src/metabase/client.js";
 import { currentUser, databaseCount, normalizeList } from "../src/metabase/server.js";
-import { listDatabases } from "../src/metabase/database.js";
+import { databaseMetadata, listDatabases } from "../src/metabase/database.js";
 import { runDataset } from "../src/metabase/dataset.js";
+import { search } from "../src/metabase/search.js";
+import { listCollections } from "../src/metabase/collection.js";
 
 /**
  * Live integration tests against a real instance. Skipped unless METABASE_URL +
@@ -57,4 +59,15 @@ describe.skipIf(!live)("live metabase (api key)", () => {
     }
     expect(ok).toBe(true);
   }, 60_000);
+
+  it("fetches database metadata with tables", async () => {
+    const dbs = await listDatabases(client());
+    const meta = await databaseMetadata(client(), dbs[0].id);
+    expect(Array.isArray(meta.tables)).toBe(true);
+  });
+
+  it("searches and lists collections", async () => {
+    expect(Array.isArray(await search(client(), "a"))).toBe(true);
+    expect(Array.isArray(await listCollections(client()))).toBe(true);
+  });
 });
