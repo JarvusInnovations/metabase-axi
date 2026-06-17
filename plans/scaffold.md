@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: []
 specs:
   - specs/architecture.md
@@ -37,12 +37,12 @@ scripts, `README.md`, `LICENSE`. Out: real command logic (later plans), API clie
 
 ## Validation
 
-- [ ] `bun run build` produces `dist/` with no type errors.
-- [ ] `metabase-axi --help` prints `TOP_HELP`; `metabase-axi --version` prints the version.
-- [ ] Every Tier-0/1 command is registered and returns a structured "not implemented yet"
+- [x] `bun run build` produces `dist/` with no type errors.
+- [x] `metabase-axi --help` prints `TOP_HELP`; `metabase-axi --version` prints the version.
+- [x] Every Tier-0/1 command is registered and returns a structured "not implemented yet"
       notice (no crash).
-- [ ] `metabase-axi` (no args) runs the placeholder home without throwing.
-- [ ] `vitest run` passes (a smoke test for help/version/unknown-command).
+- [x] `metabase-axi` (no args) runs the placeholder home without throwing.
+- [x] `vitest run` passes (smoke tests for help/version/unknown-command/per-command help).
 
 ## Risks / unknowns
 
@@ -50,4 +50,17 @@ scripts, `README.md`, `LICENSE`. Out: real command logic (later plans), API clie
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1, per owner direction).
+- Pinned `axi-sdk-js@0.1.7`, `@toon-format/toon@2.3.0`; bun 1.3.14 / nodejs 22.22.3.
+- **SDK exports only `cli`/`errors`/`hooks`** — the `output.js` helpers (`renderOutput`
+  etc.) are NOT re-exported. Like the rest of the family, we build TOON via
+  `@toon-format/toon`'s `encode` directly in `src/output.ts`.
+- Command handlers return structured objects; the SDK TOON-encodes them at the boundary
+  and merges the bin/description header for the home view. Confirmed the emitted shape
+  matches the family (`thing[N]{cols}:` + `help[N]:`).
+- `cli.ts` exposes a `cliOptions(overrides)` factory so tests can drive dispatch with a
+  captured stdout/argv.
+
 ## Follow-ups
+
+- None. Real command logic proceeds in `config-and-auth` and `output-foundation`.
