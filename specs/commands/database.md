@@ -24,7 +24,7 @@ tables/fields by substring), `--instance <name>`.
 - `schema`: grouped by table. For each table a `table:` header (`name`, `schema`, field
   count) then `fields[N]{name,base_type,semantic_type}`. `semantic_type` flags PK/FK/etc.
   Capped per [output-rendering](../behaviors/output-rendering.md); large schemas suggest
-  `--table`/`--search` in `help[]`, or `--out` to dump the full metadata to a file.
+  `--table`/`--search` in `help[]`, or `--json-out` to dump the full metadata to a file.
 - Output is shaped to be **directly usable for writing the next `query`** (real field names
   - types, no prose).
 

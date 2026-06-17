@@ -30,14 +30,14 @@ creating/editing cards or dashboards (Tier 2). `card run` reuses query-result re
    renderer; `card view` shows native SQL inline or an MBQL summary + declared params.
 2. `dashboard.ts`: `listDashboards()`, `getDashboard(id)`; `view` renders
    `cards[]{card_id,name,viz,tab}` + `parameters[]{name,type}`, grouping by tab when present;
-   `--out` dumps full structure.
+   `--json-out` dumps full structure.
 3. Wire `help[]` cross-links: card view→run, dashboard view→`card run <card_id>`.
 
 ## Validation
 
 - [ ] `card list --mine` / `--archived` / `--db` filter correctly with capped output.
 - [ ] `card view <id>` shows the query text + parameters; long SQL truncates with marker.
-- [ ] `card run <id>` renders identically to `query` results and honors `--out`/`--params`/
+- [ ] `card run <id>` renders identically to `query` results and honors `--json-out`/`--csv-out`/`--params`/
       `--limit` + the expensive-op instance guard.
 - [ ] `dashboard list` shows id/name/collection/card-count.
 - [ ] `dashboard view <id>` lists dashcards with viz + parameters; tabs grouped when present.

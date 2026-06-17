@@ -31,15 +31,19 @@ for follow-up `jq`/script processing — rather than a `--json`-to-stdout mode.
 
 ### Full export (file, opt-in)
 
-- **`--out <path>`** writes the full result to a file. Format is inferred from the path
-  extension: `.json` (default), `.csv`, `.xlsx`. CSV/XLSX use Metabase's native export
-  endpoints (`POST /api/dataset/:format`, `POST /api/card/:id/query/:format`); JSON writes
-  the full query-result payload (rows + cols).
-- **`--json-out[=<path>]`** is the conventional alias that forces JSON output (aligns with
-  the AXI #32 convention). If given **without** a path, the tool auto-generates one under
-  `<config-dir>/exports/<UTC-timestamp>-<kind>.json` and reports it.
-- **`--out` with no extension or an explicit `--format csv|json|xlsx`** resolves format
-  the same way.
+Format is chosen by an **explicit per-format flag** — no generic `--out`, no extension
+inference, no `--format` selector. The flag names the format outright (no magic):
+
+- **`--json-out[=<path>]`** — write the full query-result payload (rows + cols) as JSON.
+- **`--csv-out[=<path>]`** — write the full result as CSV via Metabase's native export
+  (`POST /api/dataset/:format`, `POST /api/card/:id/query/:format`).
+- **`--xlsx-out[=<path>]`** — same, exported as XLSX.
+
+Rules common to all three:
+
+- The `=<path>` is optional. When omitted, the tool auto-generates
+  `<config-dir>/exports/<UTC-timestamp>-<kind>.<ext>` and reports the path.
+- At most one `*-out` flag per invocation; combining them is a validation error.
 - When a file is written, stdout adds:
   - a `wrote:` line — `wrote: <path> (<row_count> rows, <col_count> cols)`;
   - a `columns:` line listing column names (so follow-up `jq` can be written without
@@ -54,13 +58,6 @@ for follow-up `jq`/script processing — rather than a `--json`-to-stdout mode.
   isn't.
 - Metabase also caps result rows server-side; when the server truncated, the preview's
   `rows:` total reflects the server-reported count and a `help[]` line notes the server cap.
-
-## Open decision
-
-The exact flag spelling (`--out` vs `--json-out` vs both; auto-tmp path location) is the
-spot the #32 author flagged as needing real-agent experimentation. This spec's choice
-(`--out <path>` primary, `--json-out` alias, auto-path under the config dir) is the
-starting point; revise once we observe which form agents reach for.
 
 ## Principles
 

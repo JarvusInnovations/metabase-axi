@@ -31,7 +31,7 @@ SQL, stdin `-`, `--mbql`, `--db`, `--params`, preview + export). Out: saved-card
    returning bytes; `parameterValues()`.
 2. `src/commands/query.ts`: parse SQL arg / stdin `-` / `--mbql`; resolve `--db` (id or
    name, single-db fallback); build the dataset query; run; render preview via
-   `output-foundation`; on `--out`/`--json-out` call the export path; surface `native_form`
+   `output-foundation`; on a `*-out` flag call the export path; surface `native_form`
    for MBQL; map `status:failed` → `QUERY_ERROR` with verbatim server text.
 3. Apply the expensive-op instance guard from `instance-resolution`.
 
@@ -42,7 +42,7 @@ SQL, stdin `-`, `--mbql`, `--db`, `--params`, preview + export). Out: saved-card
 - [ ] `echo "SELECT …" | query -` reads SQL from stdin.
 - [ ] `query --mbql '{…}'` runs MBQL and surfaces compiled SQL when present.
 - [ ] A result over the cap truncates with `rows: N of M`; `--limit` raises the preview.
-- [ ] `query "…" --out /tmp/r.csv` writes CSV, preview unchanged, `jq`/`wrote:` lines shown.
+- [ ] `query "…" --csv-out /tmp/r.csv` writes CSV, preview unchanged, `jq`/`wrote:` lines shown.
 - [ ] A bad SQL string yields a `QUERY_ERROR` carrying the server's message verbatim.
 - [ ] With 2+ profiles and no `--instance`/env, `query` stops (expensive-op guard).
 

@@ -23,7 +23,7 @@ Flags: `list`: `--collection <id>`, `--archived`, `--limit <n>`, `--instance <na
   cap + `help[]`.
 - `view`: header (`id,name,collection,tabs`) + `cards[N]{card_id,name,viz,tab}` (one row per
   dashcard) + `parameters[N]{name,type}` (the dashboard's filters). Large dashboards capped;
-  `--out` dumps full structure to a file.
+  `--json-out` dumps the full structure to a file.
 - Tabs: when present, group dashcards by tab; otherwise omit the `tab` column.
 
 ## Actions

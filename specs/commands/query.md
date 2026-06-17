@@ -16,8 +16,8 @@ Flags:
   has a single database or a configured default db.
 - `--mbql <json>` — run a structured MBQL query instead of native SQL.
 - `--limit <n>` — preview row cap override (default `PREVIEW_ROW_CAP` = 20).
-- `--out <path>` / `--json-out[=<path>]` / `--format csv|json|xlsx` — full export
-  (see [result-export-and-truncation](../behaviors/result-export-and-truncation.md)).
+- `--json-out[=<path>]` / `--csv-out[=<path>]` / `--xlsx-out[=<path>]` — full export to a
+  file (see [result-export-and-truncation](../behaviors/result-export-and-truncation.md)).
 - `--params <json>` — parameters/template-tag values for parameterized SQL.
 
 ## Data Requirements
@@ -36,7 +36,7 @@ Per [output-rendering](../behaviors/output-rendering.md) and
 - A TOON table of up to `--limit` rows, with `cols` showing name + base type.
 - For MBQL, surface the compiled SQL (`native_form`) when present.
 - On `status: "failed"`, raise `QUERY_ERROR` with the server's error text verbatim.
-- When `--out`/`--json-out` is used, add `wrote:`, `columns:`, and a `jq` `help[]` line.
+- When a `*-out` flag is used, add `wrote:`, `columns:`, and a `jq` `help[]` line.
 
 ## Actions
 
@@ -49,7 +49,7 @@ Per [output-rendering](../behaviors/output-rendering.md) and
 
 - `db list` / `db schema <id>` — discover databases, tables, fields to write the query.
 - `card list` — find an existing saved question instead of writing SQL.
-- After a result: `help[]` suggests `--out` for full data, `--limit` for more rows, and
+- After a result: `help[]` suggests `--json-out`/`--csv-out` for full data, `--limit` for more rows, and
   `db schema` if a column was unexpected.
 
 ## Principles

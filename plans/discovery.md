@@ -28,7 +28,7 @@ clients and `src/commands/{database,search,collection}.ts`. Centerpiece is `db s
 
 1. `database.ts`: `listDatabases()` (normalize shape); `databaseMetadata(id)` → tables→fields.
    `db schema` groups by table, renders `fields[]{name,base_type,semantic_type}`, filters by
-   `--table`/`--search`, offers `--out` for full metadata.
+   `--table`/`--search`, offers `--json-out` for full metadata.
 2. `search.ts`: `search(q, models)` → `GET /api/search`; render `results[]{model,id,name,
    collection}`; route `help[]` to the per-model viewer.
 3. `collection.ts`: `listCollections(ns)` → derive `parent` from `location`; `--parent`
@@ -38,7 +38,7 @@ clients and `src/commands/{database,search,collection}.ts`. Centerpiece is `db s
 
 - [ ] `db list` shows id/name/engine/table-count.
 - [ ] `db schema <id>` lists tables with fields + base/semantic types; `--table`/`--search`
-      filter correctly; large schema suggests narrowing + `--out`.
+      filter correctly; large schema suggests narrowing + `--json-out`.
 - [ ] `search "<term>"` returns mixed models with correct discriminators; `--type card`
       filters; empty query gives a definitive empty state.
 - [ ] `collection list` shows the tree flatly; `--parent <id>` scopes to children + echoes
@@ -47,7 +47,7 @@ clients and `src/commands/{database,search,collection}.ts`. Centerpiece is `db s
 
 ## Risks / unknowns
 
-- **Metadata size** — big databases produce huge metadata; rely on caps + `--table`/`--out`.
+- **Metadata size** — big databases produce huge metadata; rely on caps + `--table`/`--json-out`.
 - **Search model coverage** — confirm which `model` values the target Metabase version
   returns.
 

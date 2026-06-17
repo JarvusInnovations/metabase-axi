@@ -14,7 +14,7 @@ Flags:
 
 - `list`: `--mine`, `--archived`, `--db <id>`, `--collection <id>`, `--limit <n>`,
   `--instance <name>`.
-- `run`: `--params <json>`, `--limit <n>`, `--out/--json-out/--format …`, `--instance <name>`.
+- `run`: `--params <json>`, `--limit <n>`, `--json-out`/`--csv-out`/`--xlsx-out`, `--instance <name>`.
 
 ## Data Requirements
 

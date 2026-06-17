@@ -62,9 +62,11 @@ the next query.
 
 When a command can return more data than fits an agent turn, stdout gets a small,
 capped, agent-readable **preview**; the **full raw payload goes to a file** on request
-(`--out`/`--json-out`), and `help[]` points a `jq` example at it. metabase-axi never
+(`--json-out`/`--csv-out`/`--xlsx-out`), and `help[]` points a `jq` example at it. metabase-axi never
 offers a `--json`-to-stdout dump. The preview is for *deciding* (is this the right data,
-what are the columns); the file is the source of truth for *follow-up* processing.
+what are the columns); the file is the source of truth for *follow-up* processing. Export format is selected by an
+explicit per-format flag (`--json-out`/`--csv-out`/`--xlsx-out`) — never inferred from a
+path extension or a `--format` selector.
 
 > Why: this is the design stance worked out for data-returning AXI tools in
 > [kunchenguid/axi#32](https://github.com/kunchenguid/axi/issues/32) — `--json`-to-stdout
