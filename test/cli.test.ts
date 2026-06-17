@@ -35,8 +35,9 @@ describe("metabase-axi cli (scaffold)", () => {
     expect(out).toContain("--csv-out");
   });
 
-  it("every Tier 0/1 command is registered and returns a not-implemented notice", async () => {
-    for (const cmd of ["auth", "doctor", "setup", "card", "db", "search", "dashboard", "collection"]) {
+  it("still-stubbed commands return a not-implemented notice", async () => {
+    // Shrinks as commands are implemented; auth/doctor are live as of config-and-auth.
+    for (const cmd of ["setup", "card", "db", "search", "dashboard", "collection"]) {
       const out = await run([cmd]);
       expect(out, cmd).toContain("not implemented yet");
     }
