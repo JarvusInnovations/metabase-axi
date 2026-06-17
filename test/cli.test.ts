@@ -34,11 +34,6 @@ describe("metabase-axi cli (scaffold)", () => {
     expect(out).toContain("--csv-out");
   });
 
-  it("the setup command is still a stub (pending home-and-hooks)", async () => {
-    const out = await run(["setup"]);
-    expect(out).toContain("not implemented yet");
-  });
-
   it("home runs without throwing and its help includes --help and <command> --help", async () => {
     const out = await homeCommand();
     const help = (out.help as string[]) ?? [];
