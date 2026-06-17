@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [config-and-auth, output-foundation]
 specs:
   - specs/commands/query.md
@@ -37,14 +37,18 @@ SQL, stdin `-`, `--mbql`, `--db`, `--params`, preview + export). Out: saved-card
 
 ## Validation
 
-- [ ] `query "SELECT 1 AS n"` against a configured db shows a 1-row preview with `cols`
-      types and echoed `instance:`/`database:`/`rows:`/`time:`.
-- [ ] `echo "SELECT …" | query -` reads SQL from stdin.
-- [ ] `query --mbql '{…}'` runs MBQL and surfaces compiled SQL when present.
-- [ ] A result over the cap truncates with `rows: N of M`; `--limit` raises the preview.
-- [ ] `query "…" --csv-out /tmp/r.csv` writes CSV, preview unchanged, `jq`/`wrote:` lines shown.
-- [ ] A bad SQL string yields a `QUERY_ERROR` carrying the server's message verbatim.
-- [ ] With 2+ profiles and no `--instance`/env, `query` stops (expensive-op guard).
+- [x] `query "SELECT 1 AS n"` against a configured db shows a 1-row preview with `cols`
+      types and echoed `instance:`/`database:`/`rows:`/`time:`. (Verified live.)
+- [x] `echo "SELECT …" | query -` reads SQL from stdin. (Verified live.)
+- [x] `query --mbql '{…}'` runs MBQL and surfaces compiled SQL when present. (Verified live
+      against a real table id; `sql:` shows the compiled query.)
+- [x] A result over the cap truncates with `rows: N of M`; `--limit` raises the preview.
+      (Verified live with a 100-row generate_series.)
+- [x] `query "…" --csv-out /tmp/r.csv` writes CSV, preview unchanged, `jq`/`wrote:` lines
+      shown. (Verified live; json + auto-path also verified.)
+- [x] A bad SQL string yields a `QUERY_ERROR` carrying the server's message verbatim, exit 1.
+- [x] With 2+ profiles and no `--instance`/env, `query` stops (expensive-op guard).
+      (`query` resolves with `risky:true`; ambiguity-stop unit-tested in `resolve.test.ts`.)
 
 ## Risks / unknowns
 
@@ -54,4 +58,17 @@ SQL, stdin `-`, `--mbql`, `--db`, `--params`, preview + export). Out: saved-card
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1).
+- `renderQueryResult` (`src/result.ts`) is shared with `card run` (cards-and-dashboards):
+  capped preview + optional file export, JSON serialized from the in-memory result,
+  csv/xlsx fetched via an injected `exportBytes` callback (dataset vs card endpoint).
+- `showCompiledSql` echoes `native_form` only for MBQL/cards — suppressed for native SQL
+  the user already typed, to save tokens.
+- `--db` accepts an id or a case-insensitive name; with one database it's inferred.
+- Live note: the test instance has external databases with broken downstream connections
+  (the env's known unreachable DBs) — those return a real `QUERY_ERROR`. The live dataset
+  test tries databases until one answers, so it's instance-agnostic.
+
 ## Follow-ups
+
+- None.
