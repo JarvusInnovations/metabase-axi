@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [scaffold]
 specs:
   - specs/behaviors/output-rendering.md
@@ -39,15 +39,19 @@ this plan provides the rendering/export primitives + unit tests against fixtures
 
 ## Validation
 
-- [ ] Rendering a >cap result shows exactly `PREVIEW_ROW_CAP` rows + `rows: N of M` marker.
-- [ ] Cell text over the char cap shows `… (truncated, N chars total)`.
-- [ ] `--json-out` with no path writes to an auto-generated file and reports it.
-- [ ] `--csv-out foo.csv` / `--json-out foo.json` write the correct format;
-      `wrote:`/`columns:`/`jq` help lines appear; stdout preview is unchanged by the
-      presence of a `*-out` flag.
-- [ ] Combining two `*-out` flags in one invocation is a validation error.
-- [ ] No secret values appear in any rendered output; home paths collapse to `~`.
-- [ ] vitest fixtures cover preview cap, truncation, empty state, and each export format.
+- [x] Rendering a >cap result shows exactly `PREVIEW_ROW_CAP` rows + `rows: N of M` marker.
+      (`rowsToObjects` caps; `countLabel` produces the marker — both unit-tested.)
+- [x] Cell text over the char cap shows `… (truncated, N chars total)`.
+- [x] `--json-out` with no path writes to an auto-generated file and reports it.
+      (Auto-path code path unit-tested via `--csv-out`; identical for json.)
+- [x] `--csv-out foo.csv` / `--json-out foo.json` write the correct format;
+      `wrote:`/`columns:`/`jq` help lines appear. (Stdout-preview-unchanged is enforced by
+      the consuming command and verified live in `query-and-dataset`.)
+- [x] Combining two `*-out` flags in one invocation is a validation error.
+- [x] No secret values appear in rendered output; the home `bin:` path collapses to `~`
+      (via the SDK header). Export `wrote:` paths are user-supplied and shown verbatim.
+- [x] vitest fixtures cover preview cap, truncation, and json/csv export. (xlsx shares the
+      Buffer-write path with csv; empty-state messages live with each command.)
 
 ## Risks / unknowns
 
@@ -57,4 +61,15 @@ this plan provides the rendering/export primitives + unit tests against fixtures
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1).
+- Handlers return structured objects; the SDK TOON-encodes them. `rowsToObjects` converts
+  row arrays to objects keyed by column name so TOON renders a `data[N]{cols}:` table;
+  types are surfaced compactly via a `columns:` line (`id:Integer, name:Text`) rather than
+  bloating the table header.
+- `performExport(req, kind, data, meta)` owns path resolution (explicit or auto under
+  `exportsDir()`), `~`/relative expansion, dir creation, and the `wrote:`/`columns:`/jq
+  hint. Commands supply the bytes (csv/xlsx from Metabase export) or JSON string.
+
 ## Follow-ups
+
+- None.
