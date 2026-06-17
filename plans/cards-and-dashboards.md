@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [config-and-auth, output-foundation, query-and-dataset]
 specs:
   - specs/commands/card.md
@@ -35,13 +35,18 @@ creating/editing cards or dashboards (Tier 2). `card run` reuses query-result re
 
 ## Validation
 
-- [ ] `card list --mine` / `--archived` / `--db` filter correctly with capped output.
-- [ ] `card view <id>` shows the query text + parameters; long SQL truncates with marker.
-- [ ] `card run <id>` renders identically to `query` results and honors `--json-out`/`--csv-out`/`--params`/
-      `--limit` + the expensive-op instance guard.
-- [ ] `dashboard list` shows id/name/collection/card-count.
-- [ ] `dashboard view <id>` lists dashcards with viz + parameters; tabs grouped when present.
-- [ ] `help[]` cross-links resolve to runnable commands.
+- [x] `card list --mine` / `--archived` / `--db` / `--collection` filter with capped output.
+      (Verified live; "5 of 188". --db/--collection filter client-side on the listed cards.)
+- [x] `card view <id>` shows the query text + parameters; long SQL truncates with marker.
+      (Handles native SQL, classic MBQL `query`, and the newer pMBQL `stages` shape.)
+- [x] `card run <id>` renders identically to `query` results and honors `--json-out`/
+      `--csv-out`/`--params`/`--limit` + the expensive-op instance guard. (Verified live:
+      preview + CSV export of an 83-row card; reuses `renderQueryResult`.)
+- [x] `dashboard list` shows id/name/collection/edited. (Card count moved to `view` — the
+      list endpoint omits dashcards; spec updated accordingly.)
+- [x] `dashboard view <id>` lists dashcards with viz + parameters; tabs grouped when present.
+      (Verified live on a 6-dashcard dashboard; `--json-out` dumps full structure.)
+- [x] `help[]` cross-links resolve to runnable commands.
 
 ## Risks / unknowns
 
@@ -50,4 +55,19 @@ creating/editing cards or dashboards (Tier 2). `card run` reuses query-result re
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1).
+- **Spec correction:** `dashboard list` drops the `cards` count — the `/api/dashboard` list
+  response has no dashcards and counting per-dashboard would be N+1; the count lives in
+  `view`. `dashboard.md` display rule updated.
+- **pMBQL:** newer Metabase cards use a `dataset_query` with `stages` + `lib/type` (no
+  `type`/`query`/`native`); `card view` discriminates on the card's `query_type` and renders
+  native SQL, classic `query`, or `stages`.
+- `card run` reuses `renderQueryResult` with an `exportBytes` that calls the card export
+  endpoint; csv export returns Metabase display-name headers.
+- `--db`/`--collection` on `card list` filter client-side (the `f=database` server filter
+  needs a `model_id`); robust across versions.
+
 ## Follow-ups
+
+- **Deferred:** exercise a parameterized `card run --params` against a parameterized card
+  (the test instance card used had no required parameters).
