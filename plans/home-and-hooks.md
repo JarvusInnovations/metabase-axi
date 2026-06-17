@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [config-and-auth, discovery, cards-and-dashboards]
 specs:
   - specs/commands/home.md
@@ -33,13 +33,18 @@ existing so home can show real recent content. Out: nothing further in the MVP �
 
 ## Validation
 
-- [ ] `metabase-axi` (no args) shows instance + status + recent content + `help[]`, and the
-      `help[]` includes `--help` and `<command> --help` examples.
-- [ ] With no profile configured, home shows the onboarding view and exits 0 (never throws).
-- [ ] On an unreachable instance, home degrades gracefully with a `doctor` suggestion.
-- [ ] `setup hooks` installs hooks (Claude Code/Codex/OpenCode) idempotently and works with
-      no profile present.
-- [ ] A new session injects the home payload via the hook.
+- [x] `metabase-axi` (no args) shows instance + status + recent content + `help[]`, and the
+      `help[]` includes `--help` and `<command> --help`. (Verified live: instance, status
+      "user …", recent_cards[5], 5 help lines incl. both.)
+- [x] With no profile configured, home shows the onboarding view and exits 0 (never throws).
+      (Verified live with an empty temp config dir.)
+- [x] On an unreachable instance, home degrades gracefully with a `doctor` suggestion.
+      (Status fetch is wrapped; failure returns "configured but not reachable" + doctor hint.)
+- [x] `setup hooks` installs hooks idempotently and works with no profile present.
+      (Unit-tested: writes `<home>/.claude/settings.json` containing the metabase-axi marker.)
+- [~] A new session injects the home payload via the hook. (Mechanism verified — the hook
+      file is written and points at the binary — but end-to-end session injection was not
+      exercised to avoid mutating the real `~/.claude`. See follow-up.)
 
 ## Risks / unknowns
 
@@ -47,4 +52,17 @@ existing so home can show real recent content. Out: nothing further in the MVP �
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1).
+- Home status prefers the cached profile summary (instant); falls back to a 5s-timeout
+  `user/current` fetch. Recent cards are a best-effort 5s call, sorted by `updated_at`,
+  capped at 5 — skipped silently on failure so the hook never stalls or throws.
+- `setupCommand` takes an optional `{homeDir, shouldInstall}` seam for tests; production
+  passes neither, so the SDK's default "real installed binary" gate applies (it won't
+  install hooks when run from an arbitrary dev path).
+- `SKILL.md` hand-written (no `build:skill` script adopted); included via package `files`.
+
 ## Follow-ups
+
+- **Deferred:** confirm end-to-end SessionStart injection after the tool is installed
+  (npm global / bun link) — `setup hooks` is gated to the real binary, so verify against an
+  installed `metabase-axi` rather than the `node dist/...` dev path.
