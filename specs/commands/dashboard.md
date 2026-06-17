@@ -19,8 +19,9 @@ Flags: `list`: `--collection <id>`, `--archived`, `--limit <n>`, `--instance <na
 
 ## Display Rules
 
-- `list`: `dashboards[N]{id,name,collection,cards}` — `cards` = dashcard count; `[N of M]`
-  cap + `help[]`.
+- `list`: `dashboards[N]{id,name,collection,edited}` — `[N of M]` cap + `help[]`. (Dashcard
+  count is shown in `view`, not `list`: the list endpoint does not include dashcards, and
+  fetching each one to count would be N+1 — omitted here per "show what's available".)
 - `view`: header (`id,name,collection,tabs`) + `cards[N]{card_id,name,viz,tab}` (one row per
   dashcard) + `parameters[N]{name,type}` (the dashboard's filters). Large dashboards capped;
   `--json-out` dumps the full structure to a file.
