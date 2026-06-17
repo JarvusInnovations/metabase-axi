@@ -15,6 +15,7 @@ export interface Field {
   display_name?: string;
   base_type?: string;
   semantic_type?: string | null;
+  description?: string | null;
 }
 
 export interface Table {
@@ -23,6 +24,7 @@ export interface Table {
   display_name?: string;
   schema?: string;
   db_id?: number;
+  description?: string | null;
   fields?: Field[];
 }
 

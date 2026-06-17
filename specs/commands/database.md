@@ -25,6 +25,11 @@ tables/fields by substring), `--instance <name>`.
   count) then `fields[N]{name,base_type,semantic_type}`. `semantic_type` flags PK/FK/etc.
   Capped per [output-rendering](../behaviors/output-rendering.md); large schemas suggest
   `--table`/`--search` in `help[]`, or `--json-out` to dump the full metadata to a file.
+- **Descriptions:** Metabase table/field annotations (`description`) are surfaced when
+  present — a `description` column is added to the table overview / field listing / search
+  matches only if at least one item in that set has one (omitted entirely when none do, to
+  preserve the token budget). `--search` also matches against description text, so a column
+  can be found by its documented meaning, not just its name.
 - Output is shaped to be **directly usable for writing the next `query`** (real field names
   - types, no prose).
 

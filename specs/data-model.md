@@ -32,10 +32,13 @@ schema introspection.
 
 ### Table / Field
 
-- **Table:** `id`, `name`, `display_name`, `schema`, `db_id`. Belongs to a database.
+- **Table:** `id`, `name`, `display_name`, `schema`, `db_id`, `description`. Belongs to a
+  database.
 - **Field:** `id`, `name`, `display_name`, `base_type` (`type/Integer`, `type/Text`,
-  `type/DateTime`, …), `semantic_type` (e.g. `type/PK`, `type/FK`, `type/Category`).
-  Belongs to a table. Types are what an agent needs to write a correct query.
+  `type/DateTime`, …), `semantic_type` (e.g. `type/PK`, `type/FK`, `type/Category`),
+  `description`. Belongs to a table. Types are what an agent needs to write a correct query;
+  the `description` (a human annotation set in Metabase's data model, often null) is the
+  "what does this mean" context that helps choose the right column.
 
 ### Card (saved question)
 

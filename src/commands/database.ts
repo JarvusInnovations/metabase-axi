@@ -4,6 +4,7 @@ import {
   databaseMetadata,
   listDatabases,
   resolveDatabaseId,
+  type Field,
   type Table,
 } from "../metabase/database.js";
 import {
@@ -11,6 +12,7 @@ import {
   parseExportRequest,
   performExport,
   shortType,
+  truncateCell,
   type StructuredOutput,
 } from "../output.js";
 import { numFlag, parseArgs, strFlag } from "../flags.js";
@@ -61,12 +63,21 @@ async function dbList(rest: string[]): Promise<StructuredOutput> {
   return out;
 }
 
-function fieldRow(f: { name: string; base_type?: string; semantic_type?: string | null }) {
-  return {
+const DESC_CAP = 160;
+
+/**
+ * Map fields to TOON rows, adding a `description` column only when at least one field in
+ * the set carries a Metabase annotation (keeps the schema lean when nothing is documented).
+ * Exported for testing.
+ */
+export function fieldRows(fields: Field[]): StructuredOutput[] {
+  const anyDesc = fields.some((f) => f.description);
+  return fields.map((f) => ({
     name: f.name,
     type: shortType(f.base_type),
     semantic: f.semantic_type ? shortType(f.semantic_type) : "",
-  };
+    ...(anyDesc ? { description: truncateCell(f.description ?? "", DESC_CAP) } : {}),
+  }));
 }
 
 async function dbSchema(rest: string[]): Promise<StructuredOutput> {
@@ -107,20 +118,31 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
   const help: string[] = [];
 
   if (search) {
-    const matches = allTables.flatMap((t) =>
-      (t.fields ?? [])
-        .filter(
-          (f) =>
-            f.name.toLowerCase().includes(search) ||
-            (f.display_name ?? "").toLowerCase().includes(search),
-        )
-        .map((f) => ({ table: t.name, ...fieldRow(f) })),
-    );
-    const { items, label } = capList(matches, numFlag(parsed, "limit") ?? 100);
+    const matched: Array<{ table: string; field: Field }> = [];
+    for (const t of allTables) {
+      for (const f of t.fields ?? []) {
+        if (
+          f.name.toLowerCase().includes(search) ||
+          (f.display_name ?? "").toLowerCase().includes(search) ||
+          (f.description ?? "").toLowerCase().includes(search)
+        ) {
+          matched.push({ table: t.name, field: f });
+        }
+      }
+    }
+    const anyDesc = matched.some((m) => m.field.description);
+    const rows = matched.map(({ table, field }) => ({
+      table,
+      name: field.name,
+      type: shortType(field.base_type),
+      semantic: field.semantic_type ? shortType(field.semantic_type) : "",
+      ...(anyDesc ? { description: truncateCell(field.description ?? "", DESC_CAP) } : {}),
+    }));
+    const { items, label } = capList(rows, numFlag(parsed, "limit") ?? 100);
     out.matches = items;
-    if (matches.length > items.length) out.count = label;
+    if (rows.length > items.length) out.count = label;
     help.push(
-      matches.length
+      rows.length
         ? "Use the table + field names in `metabase-axi query`"
         : "No columns matched — try a different --search term",
     );
@@ -136,14 +158,17 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
       ]);
     }
     out.table = `${t.name}${t.schema ? ` (${t.schema})` : ""}`;
-    out.fields = (t.fields ?? []).map(fieldRow);
+    if (t.description) out.description = truncateCell(t.description, DESC_CAP);
+    out.fields = fieldRows(t.fields ?? []);
     help.push(`Run \`metabase-axi query "SELECT * FROM ${t.name} LIMIT 10" --db ${id}\``);
   } else {
     const { items, label } = capList(allTables, numFlag(parsed, "limit") ?? 100);
+    const anyTableDesc = items.some((t) => t.description);
     out.tables = items.map((t) => ({
       name: t.name,
       schema: t.schema ?? "",
       fields: (t.fields ?? []).length,
+      ...(anyTableDesc ? { description: truncateCell(t.description ?? "", DESC_CAP) } : {}),
     }));
     if (allTables.length > items.length) out.count = label;
     help.push(
