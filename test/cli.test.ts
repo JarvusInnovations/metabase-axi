@@ -3,7 +3,6 @@ import { runAxiCli } from "axi-sdk-js";
 import { cliOptions, TOP_HELP } from "../src/cli.js";
 import { readVersion } from "../src/meta.js";
 import { homeCommand } from "../src/commands/home.js";
-import { queryCommand } from "../src/commands/query.js";
 
 /** Run the CLI end-to-end with captured stdout. */
 async function run(argv: string[]): Promise<string> {
@@ -51,8 +50,4 @@ describe("metabase-axi cli (scaffold)", () => {
     expect(help.some((h) => h.includes("metabase-axi <command> --help"))).toBe(true);
   });
 
-  it("query stub returns a not-implemented notice", async () => {
-    const out = await queryCommand([]);
-    expect(out.message).toContain("not implemented");
-  });
 });

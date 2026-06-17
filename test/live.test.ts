@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { MetabaseClient } from "../src/metabase/client.js";
 import { currentUser, databaseCount, normalizeList } from "../src/metabase/server.js";
+import { listDatabases } from "../src/metabase/database.js";
+import { runDataset } from "../src/metabase/dataset.js";
 
 /**
  * Live integration tests against a real instance. Skipped unless METABASE_URL +
@@ -32,4 +34,27 @@ describe.skipIf(!live)("live metabase (api key)", () => {
     expect(normalizeList([1, 2])).toEqual([1, 2]);
     expect(normalizeList(null)).toEqual([]);
   });
+
+  it("runs a trivial native query via /api/dataset", async () => {
+    const dbs = await listDatabases(client());
+    expect(dbs.length).toBeGreaterThan(0);
+    // Some databases may have an unreachable downstream connection; pass if any answers.
+    let ok = false;
+    for (const db of dbs.slice(0, 8)) {
+      try {
+        const result = await runDataset(client(), {
+          database: db.id,
+          type: "native",
+          native: { query: "SELECT 1 AS n" },
+        });
+        if (result.status === "completed" && result.data?.rows?.[0]?.[0] === 1) {
+          ok = true;
+          break;
+        }
+      } catch {
+        // try the next database
+      }
+    }
+    expect(ok).toBe(true);
+  }, 60_000);
 });
