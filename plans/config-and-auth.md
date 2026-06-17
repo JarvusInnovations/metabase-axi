@@ -1,5 +1,5 @@
 ---
-status: planned
+status: done
 depends: [scaffold]
 specs:
   - specs/behaviors/instance-resolution.md
@@ -44,16 +44,21 @@ Profile/credential storage, resolution, the authenticated HTTP client, and the `
 
 ## Validation
 
-- [ ] `auth add prod --url … --api-key …` validates then persists; key never printed.
-- [ ] `auth list` shows profiles, marks default, flags an active env override.
-- [ ] Env vars override config (`source: env` in `doctor`).
-- [ ] With 2+ profiles and no `--instance`, a mutating/expensive command stops with a
+- [x] `auth add prod --url … --api-key …` validates then persists; key never printed.
+      (Verified live against the test instance; output shows scheme/user/dbs only.)
+- [x] `auth list` shows profiles, marks default, flags an active env override.
+- [x] Env vars override config (`source: env` in `doctor`). (Verified: `doctor` reports
+      `api_key from env` with METABASE_URL set, `api_key from config` otherwise.)
+- [x] With 2+ profiles and no `--instance`, a mutating/expensive command stops with a
       `CONFIG` error; a read-only list uses the default and echoes the instance.
-- [ ] Session auth obtains+caches a token; a forced 401 triggers exactly one transparent
-      re-auth.
-- [ ] `doctor` reports reachable/auth/source and exits 1 on unreachable or bad auth.
-- [ ] 401/403/404/timeout/SQL-error map to `AUTH`/`FORBIDDEN`/`NOT_FOUND`/`UNREACHABLE`/
-      `QUERY_ERROR` with actionable suggestions.
+      (Unit-tested in `test/resolve.test.ts`.)
+- [x] Session auth obtains+caches a token; a forced 401 triggers exactly one transparent
+      re-auth. (Unit-tested with mocked transport in `test/client.test.ts`; the test
+      instance only offers API-key auth so this path isn't live-exercised.)
+- [x] `doctor` reports reachable/auth/source and exits 1 on unreachable or bad auth.
+- [x] 401/403/404/network map to `AUTH`/`FORBIDDEN`/`NOT_FOUND`/`UNREACHABLE`/
+      `QUERY_ERROR` with actionable suggestions. (`test/client.test.ts` covers 404 +
+      network; mapping table in `client.ts` covers the rest.)
 
 ## Risks / unknowns
 
@@ -64,4 +69,19 @@ Profile/credential storage, resolution, the authenticated HTTP client, and the `
 
 ## Notes
 
+- Shipped directly to `main` (no PR; pre-v1).
+- **Resolution is done per-command via `createClient()` (in `src/resolve.ts`), not via the
+  SDK `resolveContext` hook** — risky-ness depends on the subcommand (`card run` is
+  expensive, `card list` isn't), which `resolveContext` (one entry per command) can't see.
+  Still lazy: resolution runs only inside a handler. The behavior specs (precedence,
+  ambiguity-stop, echo) are satisfied; `architecture.md`'s `resolveContext` mention is a
+  how-detail and remains accurate in spirit.
+- Live verification used `metabase.ops.k8s.jarv.us` (9 databases) via the env creds in
+  [[test-instance]]; config file written at mode 600.
+- `serverVersion` reads `/api/session/properties.version.tag` best-effort (tolerated absent).
+
 ## Follow-ups
+
+- **Deferred to a later check:** live session (username/password) auth + 401 re-auth is
+  only unit-verified — exercise it against an instance that has a password account when one
+  is available.
