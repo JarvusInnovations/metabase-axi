@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { existsSync, readFileSync, rmSync, mkdtempSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, mkdtempSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AxiError } from "axi-sdk-js";
@@ -103,11 +103,14 @@ describe("export flags + writing", () => {
     expect(outcome.helpLine).toContain("jq '.data.rows[]'");
   });
 
-  it("auto-generates a path under the config exports dir", () => {
+  it("auto-generates an owner-only (0600) path in the OS temp dir, not under config", () => {
     const outcome = performExport({ format: "csv" }, "card", Buffer.from("a,b\n1,2\n"));
-    expect(outcome.path.startsWith(join(dir, "exports"))).toBe(true);
+    expect(outcome.path.startsWith(join(tmpdir(), "metabase-axi"))).toBe(true);
+    expect(outcome.path.startsWith(dir)).toBe(false); // never under the config dir
     expect(outcome.path.endsWith(".csv")).toBe(true);
     expect(readFileSync(outcome.path, "utf-8")).toContain("a,b");
+    expect(statSync(outcome.path).mode & 0o777).toBe(0o600);
     expect(outcome.helpLine).toContain("head");
+    rmSync(outcome.path, { force: true });
   });
 });

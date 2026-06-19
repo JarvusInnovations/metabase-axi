@@ -9,10 +9,9 @@
  * --xlsx-out to a file, with auto-path and a jq help hint).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { AxiError } from "axi-sdk-js";
-import { exportsDir } from "./config.js";
 import { hasFlag, type ParsedArgs } from "./flags.js";
 
 export type StructuredOutput = Record<string, unknown>;
@@ -148,11 +147,15 @@ function expandPath(path: string): string {
   return isAbsolute(expanded) ? expanded : resolve(expanded);
 }
 
-/** Resolve the destination path: the explicit one, or an auto path under the config dir. */
+/**
+ * Resolve the destination path: the explicit one, or an auto path in the OS temp dir.
+ * Auto-generated exports are ephemeral scratch, so they go in `os.tmpdir()` (OS-pruned) —
+ * never under `~/.config`, which nothing prunes.
+ */
 export function resolveExportPath(req: ExportRequest, kind: string): string {
   if (req.path) return expandPath(req.path);
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return join(exportsDir(), `${stamp}-${kind}.${req.format}`);
+  return join(tmpdir(), "metabase-axi", `${stamp}-${kind}.${req.format}`);
 }
 
 function exportHelpLine(format: ExportFormat, path: string): string {
@@ -184,7 +187,10 @@ export function performExport(
 ): ExportOutcome {
   const path = resolveExportPath(req, kind);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, data);
+  // Auto-generated files land in a world-readable temp dir on some platforms and may hold
+  // sensitive query results → owner-only. Explicit paths are the caller's responsibility.
+  const auto = !req.path;
+  writeFileSync(path, data, auto ? { mode: 0o600 } : undefined);
   const rowsPart = meta.rows !== undefined ? `${meta.rows} rows` : "written";
   const colsPart = meta.cols ? `, ${meta.cols.length} cols` : "";
   return {
