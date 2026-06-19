@@ -59,10 +59,6 @@ export function configPath(): string {
   return join(configDir(), "config.json");
 }
 
-export function exportsDir(): string {
-  return join(configDir(), "exports");
-}
-
 // Read / write ────────────────────────────────────────────────────────
 export function defaultConfig(): Config {
   return { version: CONFIG_VERSION, profiles: {} };

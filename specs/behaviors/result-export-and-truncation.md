@@ -42,7 +42,13 @@ inference, no `--format` selector. The flag names the format outright (no magic)
 Rules common to all three:
 
 - The `=<path>` is optional. When omitted, the tool auto-generates
-  `<config-dir>/exports/<UTC-timestamp>-<kind>.<ext>` and reports the path.
+  `<os-temp-dir>/metabase-axi/<UTC-timestamp>-<kind>.<ext>` and reports the path. An
+  auto-generated export is **ephemeral scratch**, so it goes in the OS temp dir (which the
+  OS prunes) — never under `~/.config` (durable state that nothing prunes). An explicit
+  `--<fmt>-out=<path>` writes exactly where asked, for when the file should persist.
+- **Auto-generated export files are written `0600`** (owner-only) — query results can be
+  sensitive and the OS temp dir is world-readable on some platforms. An explicit path is
+  the caller's responsibility and is written with the default umask.
 - At most one `*-out` flag per invocation; combining them is a validation error.
 - When a file is written, stdout adds:
   - a `wrote:` line — `wrote: <path> (<row_count> rows, <col_count> cols)`;
