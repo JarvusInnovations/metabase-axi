@@ -2,12 +2,7 @@ import { AxiError } from "axi-sdk-js";
 import { createClient, instanceLabel } from "../resolve.js";
 import { exportCard, getCard, listCards, runCard } from "../metabase/card.js";
 import { renderQueryResult } from "../result.js";
-import {
-  capList,
-  relativeTime,
-  truncateCell,
-  type StructuredOutput,
-} from "../output.js";
+import { capList, relativeTime, truncateCell, type StructuredOutput } from "../output.js";
 import { hasFlag, numFlag, parseArgs, strFlag } from "../flags.js";
 
 export const CARD_HELP = `usage: metabase-axi card <subcommand> [flags]
@@ -131,9 +126,7 @@ async function cardRun(rest: string[]): Promise<StructuredOutput> {
   const parsed = parseArgs(rest, { valued: ["instance", "params", "limit"] });
   const id = parsed.positionals[0];
   if (!id) {
-    throw new AxiError("A card id is required", "VALIDATION_ERROR", [
-      "metabase-axi card run <id>",
-    ]);
+    throw new AxiError("A card id is required", "VALIDATION_ERROR", ["metabase-axi card run <id>"]);
   }
   // Card execution is potentially expensive → risky resolution.
   const { instance, client } = createClient({

@@ -77,10 +77,7 @@ export function countLabel(shown: number, total: number): string {
 }
 
 /** Cap a list and report the count label together. */
-export function capList<T>(
-  items: T[],
-  limit: number,
-): { items: T[]; label: string } {
+export function capList<T>(items: T[], limit: number): { items: T[]; label: string } {
   const capped = items.slice(0, limit);
   return { items: capped, label: countLabel(capped.length, items.length) };
 }
@@ -131,11 +128,9 @@ export function parseExportRequest(parsed: ParsedArgs): ExportRequest | undefine
   const present = Object.keys(OUT_FLAGS).filter((f) => hasFlag(parsed, f));
   if (present.length === 0) return undefined;
   if (present.length > 1) {
-    throw new AxiError(
-      "Use at most one export flag per invocation",
-      "VALIDATION_ERROR",
-      [`Got: ${present.map((f) => `--${f}`).join(", ")}`],
-    );
+    throw new AxiError("Use at most one export flag per invocation", "VALIDATION_ERROR", [
+      `Got: ${present.map((f) => `--${f}`).join(", ")}`,
+    ]);
   }
   const flag = present[0];
   const value = parsed.flags[flag];

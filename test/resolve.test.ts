@@ -45,7 +45,9 @@ describe("resolveInstance", () => {
   });
 
   it("errors on an unknown --instance", () => {
-    expect(() => resolveInstance({ config: twoProfiles(), instanceFlag: "nope" })).toThrow(AxiError);
+    expect(() => resolveInstance({ config: twoProfiles(), instanceFlag: "nope" })).toThrow(
+      AxiError,
+    );
   });
 
   it("uses the sole profile as `single` when no default is set", () => {
@@ -100,7 +102,10 @@ describe("resolveCredentials", () => {
 
   it("reads env credentials for the env instance", () => {
     process.env.METABASE_API_KEY = "envkey";
-    const auth = resolveCredentials(inst({ name: "env", source: "env", profileName: undefined }), cfg);
+    const auth = resolveCredentials(
+      inst({ name: "env", source: "env", profileName: undefined }),
+      cfg,
+    );
     expect(auth).toEqual({ scheme: "api_key", apiKey: "envkey" });
   });
 });

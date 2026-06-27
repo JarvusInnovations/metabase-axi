@@ -24,9 +24,12 @@ describe("preview helpers", () => {
   });
 
   it("columnsLine renders name:type pairs", () => {
-    expect(columnsLine([{ name: "id", base_type: "type/Integer" }, { name: "n", base_type: "type/Text" }])).toBe(
-      "id:Integer, n:Text",
-    );
+    expect(
+      columnsLine([
+        { name: "id", base_type: "type/Integer" },
+        { name: "n", base_type: "type/Text" },
+      ]),
+    ).toBe("id:Integer, n:Text");
   });
 
   it("truncateCell marks long strings and passes others through", () => {
@@ -77,7 +80,10 @@ describe("export flags + writing", () => {
   });
 
   it("parses a single export flag with and without a path", () => {
-    expect(parseExportRequest(parseArgs(["--json-out"]))).toEqual({ format: "json", path: undefined });
+    expect(parseExportRequest(parseArgs(["--json-out"]))).toEqual({
+      format: "json",
+      path: undefined,
+    });
     expect(parseExportRequest(parseArgs(["--csv-out=/tmp/x.csv"]))).toEqual({
       format: "csv",
       path: "/tmp/x.csv",
