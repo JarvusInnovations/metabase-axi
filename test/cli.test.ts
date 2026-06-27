@@ -41,5 +41,4 @@ describe("metabase-axi cli (scaffold)", () => {
     expect(help.some((h) => h.includes("metabase-axi --help"))).toBe(true);
     expect(help.some((h) => h.includes("metabase-axi <command> --help"))).toBe(true);
   });
-
 });

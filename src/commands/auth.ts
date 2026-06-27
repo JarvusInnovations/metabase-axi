@@ -129,10 +129,7 @@ async function authAdd(rest: string[]): Promise<StructuredOutput> {
     databases: cache.database_count,
     default: updated.default,
     profiles: profileTable(updated),
-    help: [
-      "Run `metabase-axi doctor` to verify",
-      "Run `metabase-axi` for the home view",
-    ],
+    help: ["Run `metabase-axi doctor` to verify", "Run `metabase-axi` for the home view"],
   };
 }
 
@@ -153,8 +150,7 @@ function authList(): StructuredOutput {
     default: cfg.default ?? "(none)",
   };
   if (process.env.METABASE_URL) {
-    out.note =
-      "METABASE_URL env override is active and shadows these profiles this session";
+    out.note = "METABASE_URL env override is active and shadows these profiles this session";
   }
   out.help = [
     "Run `metabase-axi auth use <name>` to set the default",

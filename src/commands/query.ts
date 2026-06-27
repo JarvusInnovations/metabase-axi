@@ -1,10 +1,6 @@
 import { AxiError } from "axi-sdk-js";
 import { createClient } from "../resolve.js";
-import {
-  exportDataset,
-  runDataset,
-  type DatasetQuery,
-} from "../metabase/dataset.js";
+import { exportDataset, runDataset, type DatasetQuery } from "../metabase/dataset.js";
 import { resolveDatabaseId } from "../metabase/database.js";
 import { renderQueryResult } from "../result.js";
 import { numFlag, parseArgs, strFlag } from "../flags.js";

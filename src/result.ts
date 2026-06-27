@@ -31,9 +31,7 @@ export interface RenderResultOptions {
  * file. Shared by `query` and `card run` so both render identically.
  * (specs/behaviors/result-export-and-truncation.md + output-rendering.md)
  */
-export async function renderQueryResult(
-  opts: RenderResultOptions,
-): Promise<StructuredOutput> {
+export async function renderQueryResult(opts: RenderResultOptions): Promise<StructuredOutput> {
   const { instance, result, parsed, kind } = opts;
 
   if (result.status === "failed") {

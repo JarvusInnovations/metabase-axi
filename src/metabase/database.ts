@@ -47,10 +47,7 @@ export async function databaseMetadata(
  * Resolve a database reference (numeric id, or a name) to an id. With no reference, returns
  * the sole database's id, or errors when the choice is ambiguous.
  */
-export async function resolveDatabaseId(
-  client: MetabaseClient,
-  ref?: string,
-): Promise<number> {
+export async function resolveDatabaseId(client: MetabaseClient, ref?: string): Promise<number> {
   if (ref && /^\d+$/.test(ref)) return Number(ref);
   const dbs = await listDatabases(client);
   if (ref) {

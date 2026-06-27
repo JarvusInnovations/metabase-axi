@@ -36,10 +36,7 @@ export async function listDashboards(client: MetabaseClient): Promise<Dashboard[
   return normalizeList<Dashboard>(await client.get("/api/dashboard"));
 }
 
-export async function getDashboard(
-  client: MetabaseClient,
-  id: number,
-): Promise<Dashboard> {
+export async function getDashboard(client: MetabaseClient, id: number): Promise<Dashboard> {
   return client.get<Dashboard>(`/api/dashboard/${id}`);
 }
 
