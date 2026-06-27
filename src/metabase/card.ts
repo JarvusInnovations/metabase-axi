@@ -22,10 +22,7 @@ export interface Card {
   updated_at?: string;
 }
 
-export async function listCards(
-  client: MetabaseClient,
-  filter?: string,
-): Promise<Card[]> {
+export async function listCards(client: MetabaseClient, filter?: string): Promise<Card[]> {
   return normalizeList<Card>(await client.get("/api/card", { query: { f: filter } }));
 }
 

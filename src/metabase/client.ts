@@ -78,11 +78,7 @@ export class MetabaseClient {
     return { "X-Metabase-Session": this.sessionToken as string };
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    opts: RequestOptions,
-  ): Promise<T> {
+  private async request<T>(method: string, path: string, opts: RequestOptions): Promise<T> {
     const exec = async () =>
       this.rawFetch(method, path, {
         query: opts.query,
@@ -118,8 +114,7 @@ export class MetabaseClient {
       headers?: Record<string, string>;
     } = {},
   ): Promise<Response> {
-    const url =
-      this.opts.baseUrl.replace(/\/$/, "") + path + queryString(init.query);
+    const url = this.opts.baseUrl.replace(/\/$/, "") + path + queryString(init.query);
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),

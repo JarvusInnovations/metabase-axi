@@ -158,7 +158,12 @@ describe("resolveDatabaseId", () => {
   });
   it("errors on ambiguity with multiple databases", async () => {
     await expect(
-      resolveDatabaseId(fake([{ id: 1, name: "a" }, { id: 2, name: "b" }])),
+      resolveDatabaseId(
+        fake([
+          { id: 1, name: "a" },
+          { id: 2, name: "b" },
+        ]),
+      ),
     ).rejects.toBeInstanceOf(AxiError);
   });
 });

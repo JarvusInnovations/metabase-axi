@@ -31,7 +31,10 @@ export async function searchCommand(args: string[]): Promise<StructuredOutput> {
   });
   const typeStr = strFlag(parsed, "type");
   const models = typeStr
-    ? typeStr.split(",").map((s) => s.trim()).filter(Boolean)
+    ? typeStr
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : undefined;
 
   const items = await search(client, query, models);
