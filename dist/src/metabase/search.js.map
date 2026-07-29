@@ -1,0 +1,1 @@
+{"version":3,"file":"search.js","sourceRoot":"","sources":["../../../src/metabase/search.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,aAAa,EAAE,MAAM,aAAa,CAAC;AAU5C,iFAAiF;AACjF,MAAM,CAAC,KAAK,UAAU,MAAM,CAC1B,MAAsB,EACtB,KAAa,EACb,MAAiB;IAEjB,OAAO,aAAa,CAClB,MAAM,MAAM,CAAC,GAAG,CAAC,aAAa,EAAE,EAAE,KAAK,EAAE,EAAE,CAAC,EAAE,KAAK,EAAE,MAAM,EAAE,EAAE,CAAC,CACjE,CAAC;AACJ,CAAC"}

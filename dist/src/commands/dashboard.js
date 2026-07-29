@@ -1,0 +1,145 @@
+import { AxiError } from "axi-sdk-js";
+import { createClient, instanceLabel } from "../resolve.js";
+import { createDashboard, dashcardsOf, getDashboard, listDashboards, } from "../metabase/dashboard.js";
+import { capList, parseExportRequest, performExport, relativeTime, } from "../output.js";
+import { numFlag, parseArgs, strFlag } from "../flags.js";
+export const DASHBOARD_HELP = `usage: metabase-axi dashboard <subcommand> [flags]
+subcommands[3]:
+  list              list dashboards
+  view <id>         show dashcards, parameters, and tabs
+  create <name>     create an empty dashboard
+flags{list}:
+  --collection <id>, --archived, --limit <n>, --instance <name>
+flags{view}:
+  --json-out[=path], --instance <name>
+flags{create}:
+  --description <text>, --collection <id>, --position <n>, --instance <name>
+examples:
+  metabase-axi dashboard list
+  metabase-axi dashboard view 7
+  metabase-axi dashboard create "Weekly KPIs" --collection 12`;
+export async function dashboardCommand(args) {
+    const sub = args[0];
+    const rest = args.slice(1);
+    switch (sub) {
+        case undefined:
+        case "list":
+            return dashboardList(rest);
+        case "view":
+            return dashboardView(rest);
+        case "create":
+            return dashboardCreate(rest);
+        default:
+            throw new AxiError(`Unknown dashboard subcommand: ${sub}`, "VALIDATION_ERROR", [
+                "Run `metabase-axi dashboard --help` for usage",
+            ]);
+    }
+}
+async function dashboardList(rest) {
+    const parsed = parseArgs(rest, { valued: ["instance", "collection", "limit"] });
+    const { instance, client } = createClient({
+        instanceFlag: strFlag(parsed, "instance"),
+        risky: false,
+    });
+    let dashboards = await listDashboards(client);
+    const collFilter = strFlag(parsed, "collection");
+    if (collFilter) {
+        dashboards = dashboards.filter((d) => String(d.collection_id ?? "") === collFilter);
+    }
+    const { items, label } = capList(dashboards, numFlag(parsed, "limit") ?? 30);
+    const out = {
+        instance: instanceLabel(instance),
+        dashboards: items.map((d) => ({
+            id: d.id,
+            name: d.name,
+            collection: d.collection?.name ?? "",
+            edited: relativeTime(d.updated_at),
+        })),
+    };
+    if (dashboards.length > items.length)
+        out.count = label;
+    out.help = ["Run `metabase-axi dashboard view <id>` to see its cards and filters"];
+    return out;
+}
+async function dashboardCreate(rest) {
+    const parsed = parseArgs(rest, {
+        valued: ["instance", "description", "collection", "position"],
+    });
+    const name = parsed.positionals[0];
+    if (!name) {
+        throw new AxiError("A dashboard name is required", "VALIDATION_ERROR", [
+            'metabase-axi dashboard create "My dashboard"',
+        ]);
+    }
+    // Mutating → risky resolution: never create on a guessed instance.
+    const { instance, client } = createClient({
+        instanceFlag: strFlag(parsed, "instance"),
+        risky: true,
+    });
+    const created = await createDashboard(client, {
+        name,
+        ...(strFlag(parsed, "description") ? { description: strFlag(parsed, "description") } : {}),
+        ...(numFlag(parsed, "collection") !== undefined
+            ? { collection_id: numFlag(parsed, "collection") }
+            : {}),
+        ...(numFlag(parsed, "position") !== undefined
+            ? { collection_position: numFlag(parsed, "position") }
+            : {}),
+    });
+    return {
+        instance: instanceLabel(instance),
+        created: `${created.id}: ${created.name}`,
+        collection: created.collection?.name ?? created.collection_id ?? "root",
+        url: `${instance.url.replace(/\/$/, "")}/dashboard/${created.id}`,
+        help: [
+            `Run \`metabase-axi dashboard view ${created.id}\` to confirm it landed`,
+            "The dashboard is empty — add cards in the UI, or via a Tier 2 add-card command",
+        ],
+    };
+}
+async function dashboardView(rest) {
+    const parsed = parseArgs(rest, { valued: ["instance"] });
+    const id = parsed.positionals[0];
+    if (!id) {
+        throw new AxiError("A dashboard id is required", "VALIDATION_ERROR", [
+            "metabase-axi dashboard view <id>",
+        ]);
+    }
+    const { instance, client } = createClient({
+        instanceFlag: strFlag(parsed, "instance"),
+        risky: false,
+    });
+    const dash = await getDashboard(client, Number(id));
+    const tabs = dash.tabs ?? [];
+    const tabName = (tid) => tabs.find((t) => t.id === tid)?.name ?? "";
+    const out = {
+        instance: instanceLabel(instance),
+        dashboard: `${dash.id}: ${dash.name}`,
+        collection: dash.collection?.name ?? "",
+    };
+    if (tabs.length)
+        out.tabs = tabs.map((t) => t.name);
+    const exportReq = parseExportRequest(parsed);
+    if (exportReq) {
+        if (exportReq.format !== "json") {
+            throw new AxiError("Dashboard export is JSON only — use --json-out", "VALIDATION_ERROR", []);
+        }
+        const outcome = performExport(exportReq, `dashboard-${id}`, JSON.stringify(dash, null, 2));
+        out.wrote = outcome.wrote;
+    }
+    out.cards = dashcardsOf(dash)
+        .filter((dc) => dc.card_id)
+        .map((dc) => ({
+        card_id: dc.card_id,
+        name: dc.card?.name ?? "",
+        viz: dc.card?.display ?? "",
+        ...(tabs.length ? { tab: tabName(dc.dashboard_tab_id) } : {}),
+    }));
+    const params = dash.parameters ?? [];
+    if (params.length) {
+        out.parameters = params.map((p) => ({ name: p.name ?? p.slug ?? "", type: p.type ?? "" }));
+    }
+    out.help = ["Run `metabase-axi card run <card_id>` to execute one of these cards"];
+    return out;
+}
+//# sourceMappingURL=dashboard.js.map

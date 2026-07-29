@@ -1,0 +1,3 @@
+import { type StructuredOutput } from "../output.js";
+export declare const DASHBOARD_HELP = "usage: metabase-axi dashboard <subcommand> [flags]\nsubcommands[3]:\n  list              list dashboards\n  view <id>         show dashcards, parameters, and tabs\n  create <name>     create an empty dashboard\nflags{list}:\n  --collection <id>, --archived, --limit <n>, --instance <name>\nflags{view}:\n  --json-out[=path], --instance <name>\nflags{create}:\n  --description <text>, --collection <id>, --position <n>, --instance <name>\nexamples:\n  metabase-axi dashboard list\n  metabase-axi dashboard view 7\n  metabase-axi dashboard create \"Weekly KPIs\" --collection 12";
+export declare function dashboardCommand(args: string[]): Promise<StructuredOutput>;
