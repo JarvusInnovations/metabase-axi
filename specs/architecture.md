@@ -106,14 +106,24 @@ scheduled.
 |---|---|---|
 | `query <sql\|->` | `POST /api/dataset`, `/api/dataset/:format` | Run native SQL or MBQL; export |
 | `card list\|view\|run` | `/api/card`, `/api/card/:id`, `/api/card/:id/query` | List/inspect/execute saved questions |
+| `card dashboards` | `/api/card/:id/dashboards` | What embeds a card — dependency check before editing |
 | `db list\|schema` | `/api/database`, `/api/database/:id/metadata` | List databases; introspect tables/fields |
 | `search <q>` | `/api/search` | Find cards/dashboards/collections/tables |
 | `dashboard list\|view` | `/api/dashboard`, `/api/dashboard/:id` | List & inspect dashboards |
 | `collection list` | `/api/collection` | Browse the collection tree |
+| `playground <sql\|->` | — (local URL build) | Hand SQL to a human as an openable question URL |
 
-### Tier 2 — Authoring (roadmap)
+### Tier 2 — Authoring (in progress)
 
-Create/update cards, dashboards, collections (`POST`/`PUT`), idempotent fetch-modify-PUT.
+Create/update cards, dashboards, collections (`POST`/`PUT`), fetch-modify-PUT per
+[api/conventions.md](api/conventions.md#mutating-endpoints-tier-2).
+
+| Command | Endpoint(s) | Status |
+|---|---|---|
+| `dashboard create <name>` | `POST /api/dashboard` | specified |
+| `card create\|update\|delete\|copy\|move` | `/api/card`, `/api/card/:id` | roadmap |
+| `dashboard update\|delete\|copy\|add-card\|remove-card` | `/api/dashboard/:id`, `/api/dashboard/:id/cards` | roadmap |
+| `collection create\|update\|move` | `/api/collection`, `/api/collection/:id` | roadmap |
 
 ### Tier 3 — Operations (roadmap)
 

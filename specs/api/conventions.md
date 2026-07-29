@@ -85,8 +85,33 @@ error — surface `data.error` from the result body.
   **expensive**. For these, [Never guess which instance](../principles.md#never-guess-which-instance)
   applies — the resolved instance is always echoed, and an explicit instance is required
   when ambiguous.
-- Mutating endpoints (Tier 2+) follow fetch-modify-PUT and idempotency rules to be
-  specified with those tiers.
+### Mutating endpoints (Tier 2+)
+
+Mutations are the exception per [Read-first, mutation-explicit](../principles.md#read-first-mutation-explicit).
+Every mutating command obeys all four rules:
+
+1. **Risky resolution, always.** Mutations pass `risky: true` to instance resolution, so an
+   ambiguous target stops the command instead of falling back to the default profile. The
+   resolved instance is echoed in the output like any data-bearing command.
+2. **Fetch-modify-PUT for updates.** Metabase's `PUT` endpoints replace the object, so a
+   partial body silently drops fields. An update always `GET`s the current object, merges
+   only the flags the caller supplied, and `PUT`s the merged whole. Never construct a `PUT`
+   body from flags alone.
+3. **Creates echo identity; updates echo the diff.** A create returns the new `id` and a
+   `url` the operator can open. An update reports which fields actually changed
+   (`changed[]`); a no-op update says so rather than reporting phantom success.
+4. **Destructive ops require `--yes`.** Anything that removes or archives (`delete`,
+   `remove-card`) refuses to run without an explicit `--yes`, and its refusal names the
+   object it would have affected. Confirmation is a flag, not a prompt — the caller is an
+   agent, and a blocking prompt would hang it.
+
+| Method · Path | Purpose |
+|---|---|
+| `POST /api/dashboard` | Create a dashboard. Body `{ name, description?, collection_id?, collection_position?, parameters? }`. |
+| `GET /api/card/:id/dashboards` | Dashboards that embed a card — dependency check before editing it. |
+
+Idempotency: `POST` creates are **not** idempotent (a re-run makes a second object), so a
+create never auto-retries. `PUT` updates and `DELETE`s are idempotent and safe to re-run.
 
 ## Notes
 
