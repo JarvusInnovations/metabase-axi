@@ -50,6 +50,16 @@ export class MetabaseClient {
     return this.request<T>("POST", path, opts);
   }
 
+  /** Replace an object. Metabase `PUT` is a full replace — send a fetch-modify-merged body. */
+  async put<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
+    return this.request<T>("PUT", path, opts);
+  }
+
+  /** `delete` is a reserved word, so the verb is `del`. */
+  async del<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
+    return this.request<T>("DELETE", path, opts);
+  }
+
   /** Force a session login (session auth only). No-op for API-key auth. */
   async login(): Promise<void> {
     if (this.opts.auth.scheme !== "session") return;
