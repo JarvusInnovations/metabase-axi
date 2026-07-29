@@ -1,6 +1,11 @@
 import { AxiError } from "axi-sdk-js";
 import { createClient, instanceLabel } from "../resolve.js";
-import { dashcardsOf, getDashboard, listDashboards } from "../metabase/dashboard.js";
+import {
+  createDashboard,
+  dashcardsOf,
+  getDashboard,
+  listDashboards,
+} from "../metabase/dashboard.js";
 import {
   capList,
   parseExportRequest,
@@ -11,16 +16,20 @@ import {
 import { numFlag, parseArgs, strFlag } from "../flags.js";
 
 export const DASHBOARD_HELP = `usage: metabase-axi dashboard <subcommand> [flags]
-subcommands[2]:
+subcommands[3]:
   list              list dashboards
   view <id>         show dashcards, parameters, and tabs
+  create <name>     create an empty dashboard
 flags{list}:
   --collection <id>, --archived, --limit <n>, --instance <name>
 flags{view}:
   --json-out[=path], --instance <name>
+flags{create}:
+  --description <text>, --collection <id>, --position <n>, --instance <name>
 examples:
   metabase-axi dashboard list
-  metabase-axi dashboard view 7`;
+  metabase-axi dashboard view 7
+  metabase-axi dashboard create "Weekly KPIs" --collection 12`;
 
 export async function dashboardCommand(args: string[]): Promise<StructuredOutput> {
   const sub = args[0];
@@ -31,6 +40,8 @@ export async function dashboardCommand(args: string[]): Promise<StructuredOutput
       return dashboardList(rest);
     case "view":
       return dashboardView(rest);
+    case "create":
+      return dashboardCreate(rest);
     default:
       throw new AxiError(`Unknown dashboard subcommand: ${sub}`, "VALIDATION_ERROR", [
         "Run `metabase-axi dashboard --help` for usage",
@@ -62,6 +73,45 @@ async function dashboardList(rest: string[]): Promise<StructuredOutput> {
   if (dashboards.length > items.length) out.count = label;
   out.help = ["Run `metabase-axi dashboard view <id>` to see its cards and filters"];
   return out;
+}
+
+async function dashboardCreate(rest: string[]): Promise<StructuredOutput> {
+  const parsed = parseArgs(rest, {
+    valued: ["instance", "description", "collection", "position"],
+  });
+  const name = parsed.positionals[0];
+  if (!name) {
+    throw new AxiError("A dashboard name is required", "VALIDATION_ERROR", [
+      'metabase-axi dashboard create "My dashboard"',
+    ]);
+  }
+  // Mutating → risky resolution: never create on a guessed instance.
+  const { instance, client } = createClient({
+    instanceFlag: strFlag(parsed, "instance"),
+    risky: true,
+  });
+
+  const created = await createDashboard(client, {
+    name,
+    ...(strFlag(parsed, "description") ? { description: strFlag(parsed, "description") } : {}),
+    ...(numFlag(parsed, "collection") !== undefined
+      ? { collection_id: numFlag(parsed, "collection") }
+      : {}),
+    ...(numFlag(parsed, "position") !== undefined
+      ? { collection_position: numFlag(parsed, "position") }
+      : {}),
+  });
+
+  return {
+    instance: instanceLabel(instance),
+    created: `${created.id}: ${created.name}`,
+    collection: created.collection?.name ?? created.collection_id ?? "root",
+    url: `${instance.url.replace(/\/$/, "")}/dashboard/${created.id}`,
+    help: [
+      `Run \`metabase-axi dashboard view ${created.id}\` to confirm it landed`,
+      "The dashboard is empty — add cards in the UI, or via a Tier 2 add-card command",
+    ],
+  };
 }
 
 async function dashboardView(rest: string[]): Promise<StructuredOutput> {

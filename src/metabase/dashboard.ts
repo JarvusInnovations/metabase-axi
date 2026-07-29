@@ -40,6 +40,21 @@ export async function getDashboard(client: MetabaseClient, id: number): Promise<
   return client.get<Dashboard>(`/api/dashboard/${id}`);
 }
 
+export interface NewDashboard {
+  name: string;
+  description?: string;
+  collection_id?: number;
+  collection_position?: number;
+}
+
+/** Create an empty dashboard. Not idempotent — a re-run creates a second dashboard. */
+export async function createDashboard(
+  client: MetabaseClient,
+  body: NewDashboard,
+): Promise<Dashboard> {
+  return client.post<Dashboard>("/api/dashboard", { body });
+}
+
 /** Dashcards live under `dashcards` (newer) or `ordered_cards` (older) across versions. */
 export function dashcardsOf(dash: Dashboard): DashCard[] {
   return dash.dashcards ?? dash.ordered_cards ?? [];

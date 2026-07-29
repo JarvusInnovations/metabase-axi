@@ -10,16 +10,20 @@ import { databaseCommand, DATABASE_HELP } from "./commands/database.js";
 import { searchCommand, SEARCH_HELP } from "./commands/search.js";
 import { dashboardCommand, DASHBOARD_HELP } from "./commands/dashboard.js";
 import { collectionCommand, COLLECTION_HELP } from "./commands/collection.js";
+import { playgroundCommand, PLAYGROUND_HELP } from "./commands/playground.js";
 
 export const TOP_HELP = `usage: metabase-axi [command] [args] [flags]
-commands[10]:
-  (none)=home, auth, doctor, setup, query, card, db, search, dashboard, collection
+commands[11]:
+  (none)=home, auth, doctor, setup, query, card, db, search, dashboard, collection,
+  playground
 flags:
   --instance <name> (per-command), --help, -v/--version
 examples:
   metabase-axi query "SELECT 1 AS n" --db 6
   metabase-axi db schema 6
   metabase-axi card run 42 --csv-out
+  metabase-axi card dashboards 42
+  metabase-axi playground "SELECT 1 AS n"
   metabase-axi search "revenue"
   metabase-axi --help
   metabase-axi query --help
@@ -35,6 +39,7 @@ const COMMAND_HELP: Record<string, string> = {
   search: SEARCH_HELP,
   dashboard: DASHBOARD_HELP,
   collection: COLLECTION_HELP,
+  playground: PLAYGROUND_HELP,
 };
 
 /** Build the CLI options. Overrides (e.g. `argv`, `stdout`) let tests drive dispatch. */
@@ -54,6 +59,7 @@ export function cliOptions(overrides: Partial<AxiCliOptions> = {}): AxiCliOption
       search: (args) => searchCommand(args),
       dashboard: (args) => dashboardCommand(args),
       collection: (args) => collectionCommand(args),
+      playground: (args) => playgroundCommand(args),
     },
     getCommandHelp: (command) => COMMAND_HELP[command],
     ...overrides,
