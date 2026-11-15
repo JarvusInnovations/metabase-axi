@@ -15,45 +15,44 @@ import {
   truncateCell,
   type StructuredOutput,
 } from "../output.js";
-import { numFlag, parseArgs, strFlag } from "../flags.js";
+import {
+  DATABASE_FLAGS,
+  int,
+  parseSubcommand,
+  requirePositional,
+  str,
+  type Parsed,
+} from "../flags.js";
 
 export const DATABASE_HELP = `usage: metabase-axi db <subcommand> [flags]
 subcommands[2]:
   list                  list connected databases
   schema <id|name>      introspect tables and fields (with types)
+flags{list}:
+  --limit <n>, --instance <name>
 flags{schema}:
   --table <name>        filter to one table (shows its fields)
   --search <substr>     find columns by substring across tables
-  --json-out[=path]     dump full metadata to a file
+  --limit <n>           cap the tables / matches shown
+  --json-out[=path]     dump full metadata to a file (path only with "=")
   --instance <name>
 examples:
   metabase-axi db list
   metabase-axi db schema 6 --search order`;
 
 export async function databaseCommand(args: string[]): Promise<StructuredOutput> {
-  const sub = args[0];
-  const rest = args.slice(1);
-  switch (sub) {
-    case undefined:
-    case "list":
-      return dbList(rest);
-    case "schema":
-      return dbSchema(rest);
-    default:
-      throw new AxiError(`Unknown db subcommand: ${sub}`, "VALIDATION_ERROR", [
-        "Run `metabase-axi db --help` for usage",
-      ]);
-  }
+  const { sub, parsed } = parseSubcommand("db", args, DATABASE_FLAGS, "list");
+  return sub === "schema" ? dbSchema(parsed) : dbList(parsed);
 }
 
-async function dbList(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance", "limit"] });
+async function dbList(parsed: Parsed): Promise<StructuredOutput> {
+  const limit = int(parsed, "--limit") ?? 50;
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
   const dbs = await listDatabases(client);
-  const { items, label } = capList(dbs, numFlag(parsed, "limit") ?? 50);
+  const { items, label } = capList(dbs, limit);
   const out: StructuredOutput = {
     instance: instanceLabel(instance),
     databases: items.map((d) => ({ id: d.id, name: d.name, engine: d.engine ?? "?" })),
@@ -80,18 +79,18 @@ export function fieldRows(fields: Field[]): StructuredOutput[] {
   }));
 }
 
-async function dbSchema(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, {
-    valued: ["instance", "table", "search", "limit"],
-  });
-  const ref = parsed.positionals[0];
-  if (!ref) {
-    throw new AxiError("A database id or name is required", "VALIDATION_ERROR", [
-      "metabase-axi db schema <id|name>",
-    ]);
-  }
+async function dbSchema(parsed: Parsed): Promise<StructuredOutput> {
+  const ref = requirePositional(
+    parsed,
+    0,
+    "A database id or name",
+    "metabase-axi db schema <id|name>",
+  );
+  // Validate values before resolving an instance or sending anything.
+  const limit = int(parsed, "--limit") ?? 100;
+  const exportReq = parseExportRequest(parsed);
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
   const id = await resolveDatabaseId(client, ref);
@@ -103,18 +102,15 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
     database: `${meta.name} (${id})`,
   };
 
-  // Optional full-metadata export (JSON only).
-  const exportReq = parseExportRequest(parsed);
+  // Optional full-metadata export. JSON only: the declaration offers just --json-out, so
+  // other formats never get here.
   if (exportReq) {
-    if (exportReq.format !== "json") {
-      throw new AxiError("Schema export is JSON only — use --json-out", "VALIDATION_ERROR", []);
-    }
     const outcome = performExport(exportReq, `schema-${id}`, JSON.stringify(meta, null, 2));
     out.wrote = outcome.wrote;
   }
 
-  const tableFilter = strFlag(parsed, "table")?.toLowerCase();
-  const search = strFlag(parsed, "search")?.toLowerCase();
+  const tableFilter = str(parsed, "--table")?.toLowerCase();
+  const search = str(parsed, "--search")?.toLowerCase();
   const help: string[] = [];
 
   if (search) {
@@ -138,7 +134,7 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
       semantic: field.semantic_type ? shortType(field.semantic_type) : "",
       ...(anyDesc ? { description: truncateCell(field.description ?? "", DESC_CAP) } : {}),
     }));
-    const { items, label } = capList(rows, numFlag(parsed, "limit") ?? 100);
+    const { items, label } = capList(rows, limit);
     out.matches = items;
     if (rows.length > items.length) out.count = label;
     help.push(
@@ -153,7 +149,7 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
         (x.display_name ?? "").toLowerCase() === tableFilter,
     );
     if (!t) {
-      throw new AxiError(`No table "${strFlag(parsed, "table")}" in ${meta.name}`, "NOT_FOUND", [
+      throw new AxiError(`No table "${str(parsed, "--table")}" in ${meta.name}`, "NOT_FOUND", [
         "Run `metabase-axi db schema <id>` to list tables",
       ]);
     }
@@ -162,7 +158,7 @@ async function dbSchema(rest: string[]): Promise<StructuredOutput> {
     out.fields = fieldRows(t.fields ?? []);
     help.push(`Run \`metabase-axi query "SELECT * FROM ${t.name} LIMIT 10" --db ${id}\``);
   } else {
-    const { items, label } = capList(allTables, numFlag(parsed, "limit") ?? 100);
+    const { items, label } = capList(allTables, limit);
     const anyTableDesc = items.some((t) => t.description);
     out.tables = items.map((t) => ({
       name: t.name,

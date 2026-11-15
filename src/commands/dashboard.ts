@@ -1,4 +1,3 @@
-import { AxiError } from "axi-sdk-js";
 import { createClient, instanceLabel } from "../resolve.js";
 import { dashcardsOf, getDashboard, listDashboards } from "../metabase/dashboard.js";
 import {
@@ -8,48 +7,39 @@ import {
   relativeTime,
   type StructuredOutput,
 } from "../output.js";
-import { numFlag, parseArgs, strFlag } from "../flags.js";
+import { DASHBOARD_FLAGS, int, parseSubcommand, requireId, str, type Parsed } from "../flags.js";
 
 export const DASHBOARD_HELP = `usage: metabase-axi dashboard <subcommand> [flags]
 subcommands[2]:
   list              list dashboards
   view <id>         show dashcards, parameters, and tabs
 flags{list}:
-  --collection <id>, --archived, --limit <n>, --instance <name>
+  --collection <id>, --limit <n>, --instance <name>
+  --archived (not available yet: coming in an upcoming release)
 flags{view}:
-  --json-out[=path], --instance <name>
+  --json-out[=path] (full dashboard to a file; path only with "="), --instance <name>
 examples:
   metabase-axi dashboard list
   metabase-axi dashboard view 7`;
 
 export async function dashboardCommand(args: string[]): Promise<StructuredOutput> {
-  const sub = args[0];
-  const rest = args.slice(1);
-  switch (sub) {
-    case undefined:
-    case "list":
-      return dashboardList(rest);
-    case "view":
-      return dashboardView(rest);
-    default:
-      throw new AxiError(`Unknown dashboard subcommand: ${sub}`, "VALIDATION_ERROR", [
-        "Run `metabase-axi dashboard --help` for usage",
-      ]);
-  }
+  const { sub, parsed } = parseSubcommand("dashboard", args, DASHBOARD_FLAGS, "list");
+  return sub === "view" ? dashboardView(parsed) : dashboardList(parsed);
 }
 
-async function dashboardList(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance", "collection", "limit"] });
+async function dashboardList(parsed: Parsed): Promise<StructuredOutput> {
+  // Validate values before resolving an instance or sending anything.
+  const collFilter = int(parsed, "--collection");
+  const limit = int(parsed, "--limit") ?? 30;
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
   let dashboards = await listDashboards(client);
-  const collFilter = strFlag(parsed, "collection");
-  if (collFilter) {
-    dashboards = dashboards.filter((d) => String(d.collection_id ?? "") === collFilter);
+  if (collFilter !== undefined) {
+    dashboards = dashboards.filter((d) => String(d.collection_id ?? "") === String(collFilter));
   }
-  const { items, label } = capList(dashboards, numFlag(parsed, "limit") ?? 30);
+  const { items, label } = capList(dashboards, limit);
   const out: StructuredOutput = {
     instance: instanceLabel(instance),
     dashboards: items.map((d) => ({
@@ -64,19 +54,14 @@ async function dashboardList(rest: string[]): Promise<StructuredOutput> {
   return out;
 }
 
-async function dashboardView(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance"] });
-  const id = parsed.positionals[0];
-  if (!id) {
-    throw new AxiError("A dashboard id is required", "VALIDATION_ERROR", [
-      "metabase-axi dashboard view <id>",
-    ]);
-  }
+async function dashboardView(parsed: Parsed): Promise<StructuredOutput> {
+  const id = requireId(parsed, 0, "A dashboard id", "metabase-axi dashboard view <id>");
+  const exportReq = parseExportRequest(parsed);
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
-  const dash = await getDashboard(client, Number(id));
+  const dash = await getDashboard(client, id);
   const tabs = dash.tabs ?? [];
   const tabName = (tid?: number | null) => tabs.find((t) => t.id === tid)?.name ?? "";
 
@@ -87,11 +72,8 @@ async function dashboardView(rest: string[]): Promise<StructuredOutput> {
   };
   if (tabs.length) out.tabs = tabs.map((t) => t.name);
 
-  const exportReq = parseExportRequest(parsed);
+  // JSON only: the declaration offers just --json-out, so other formats never get here.
   if (exportReq) {
-    if (exportReq.format !== "json") {
-      throw new AxiError("Dashboard export is JSON only — use --json-out", "VALIDATION_ERROR", []);
-    }
     const outcome = performExport(exportReq, `dashboard-${id}`, JSON.stringify(dash, null, 2));
     out.wrote = outcome.wrote;
   }

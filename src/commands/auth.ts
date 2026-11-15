@@ -15,7 +15,7 @@ import {
 } from "../config.js";
 import { MetabaseClient, type ResolvedAuth } from "../metabase/client.js";
 import { profileSummary } from "../metabase/server.js";
-import { parseArgs, strFlag } from "../flags.js";
+import { AUTH_FLAGS, parseSubcommand, requirePositional, str, type Parsed } from "../flags.js";
 import type { StructuredOutput } from "../output.js";
 
 export const AUTH_HELP = `usage: metabase-axi auth <subcommand> [flags]
@@ -25,6 +25,10 @@ subcommands[5]:
   use <name>     set the default profile
   login [name]   obtain/refresh a session token (session auth)
   remove <name>  delete a profile
+flags{add}:
+  --url <url>, --api-key <key>, --username <user>, --password <password>
+flags{login}:
+  --instance <name>   the profile to log in to (same as the positional)
 notes:
   - Credentials are stored locally; secrets are never printed.
   - Env vars (METABASE_URL, METABASE_API_KEY, METABASE_USERNAME/PASSWORD) override config.
@@ -33,24 +37,18 @@ examples:
   metabase-axi auth use prod`;
 
 export async function authCommand(args: string[]): Promise<StructuredOutput> {
-  const sub = args[0];
-  const rest = args.slice(1);
+  const { sub, parsed } = parseSubcommand("auth", args, AUTH_FLAGS, "list");
   switch (sub) {
-    case undefined:
-    case "list":
-      return authList();
     case "add":
-      return authAdd(rest);
+      return authAdd(parsed);
     case "use":
-      return authUse(rest);
+      return authUse(parsed);
     case "login":
-      return authLogin(rest);
+      return authLogin(parsed);
     case "remove":
-      return authRemove(rest);
+      return authRemove(parsed);
     default:
-      throw new AxiError(`Unknown auth subcommand: ${sub}`, "VALIDATION_ERROR", [
-        "Run `metabase-axi auth --help` for usage",
-      ]);
+      return authList();
   }
 }
 
@@ -76,25 +74,22 @@ function profileTable(cfg: Config): Array<Record<string, string>> {
   });
 }
 
-async function authAdd(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, {
-    valued: ["url", "api-key", "username", "password"],
-  });
-  const name = parsed.positionals[0];
-  if (!name) {
-    throw new AxiError("A profile name is required", "VALIDATION_ERROR", [
-      "metabase-axi auth add <name> --url <url> --api-key <key>",
-    ]);
-  }
-  const url = strFlag(parsed, "url");
+async function authAdd(parsed: Parsed): Promise<StructuredOutput> {
+  const name = requirePositional(
+    parsed,
+    0,
+    "A profile name",
+    "metabase-axi auth add <name> --url <url> --api-key <key>",
+  );
+  const url = str(parsed, "--url");
   if (!url) {
     throw new AxiError("--url is required", "VALIDATION_ERROR", [
       "metabase-axi auth add <name> --url https://metabase.example.org --api-key <key>",
     ]);
   }
-  const apiKey = strFlag(parsed, "api-key");
-  const username = strFlag(parsed, "username");
-  const password = strFlag(parsed, "password");
+  const apiKey = str(parsed, "--api-key");
+  const username = str(parsed, "--username");
+  const password = str(parsed, "--password");
 
   let auth: ProfileAuth;
   if (apiKey) auth = { api_key: apiKey };
@@ -159,13 +154,8 @@ function authList(): StructuredOutput {
   return out;
 }
 
-function authUse(rest: string[]): StructuredOutput {
-  const name = rest[0];
-  if (!name) {
-    throw new AxiError("A profile name is required", "VALIDATION_ERROR", [
-      "metabase-axi auth use <name>",
-    ]);
-  }
+function authUse(parsed: Parsed): StructuredOutput {
+  const name = requirePositional(parsed, 0, "A profile name", "metabase-axi auth use <name>");
   const cfg = readConfig();
   if (!getProfile(cfg, name)) {
     throw new AxiError(`No profile named "${name}"`, "CONFIG", [
@@ -188,13 +178,12 @@ function authUse(rest: string[]): StructuredOutput {
   };
 }
 
-async function authLogin(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance"] });
+async function authLogin(parsed: Parsed): Promise<StructuredOutput> {
   const cfg = readConfig();
   const names = listProfileNames(cfg);
   const targetName =
-    parsed.positionals[0] ??
-    strFlag(parsed, "instance") ??
+    parsed.positional[0] ??
+    str(parsed, "--instance") ??
     cfg.default ??
     (names.length === 1 ? names[0] : undefined);
   if (!targetName) {
@@ -234,13 +223,8 @@ async function authLogin(rest: string[]): Promise<StructuredOutput> {
   };
 }
 
-function authRemove(rest: string[]): StructuredOutput {
-  const name = rest[0];
-  if (!name) {
-    throw new AxiError("A profile name is required", "VALIDATION_ERROR", [
-      "metabase-axi auth remove <name>",
-    ]);
-  }
+function authRemove(parsed: Parsed): StructuredOutput {
+  const name = requirePositional(parsed, 0, "A profile name", "metabase-axi auth remove <name>");
   const cfg = readConfig();
   if (!getProfile(cfg, name)) {
     throw new AxiError(`No profile named "${name}"`, "CONFIG", [

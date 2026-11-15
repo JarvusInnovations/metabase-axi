@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { AxiError } from "axi-sdk-js";
-import { hasFlag, type ParsedArgs } from "./flags.js";
+import { bool, str, type Parsed } from "./flags.js";
 
 export type StructuredOutput = Record<string, unknown>;
 export type Renderable = string | StructuredOutput;
@@ -112,9 +112,9 @@ export function relativeTime(iso?: string): string {
 export type ExportFormat = "json" | "csv" | "xlsx";
 
 const OUT_FLAGS: Record<string, ExportFormat> = {
-  "json-out": "json",
-  "csv-out": "csv",
-  "xlsx-out": "xlsx",
+  "--json-out": "json",
+  "--csv-out": "csv",
+  "--xlsx-out": "xlsx",
 };
 
 export interface ExportRequest {
@@ -124,17 +124,16 @@ export interface ExportRequest {
 }
 
 /** Parse the export flags; at most one `*-out` is allowed. Returns undefined when none. */
-export function parseExportRequest(parsed: ParsedArgs): ExportRequest | undefined {
-  const present = Object.keys(OUT_FLAGS).filter((f) => hasFlag(parsed, f));
+export function parseExportRequest(parsed: Parsed): ExportRequest | undefined {
+  const present = Object.keys(OUT_FLAGS).filter((f) => bool(parsed, f));
   if (present.length === 0) return undefined;
   if (present.length > 1) {
     throw new AxiError("Use at most one export flag per invocation", "VALIDATION_ERROR", [
-      `Got: ${present.map((f) => `--${f}`).join(", ")}`,
+      `Got: ${present.join(", ")}`,
     ]);
   }
   const flag = present[0];
-  const value = parsed.flags[flag];
-  return { format: OUT_FLAGS[flag], path: typeof value === "string" ? value : undefined };
+  return { format: OUT_FLAGS[flag], path: str(parsed, flag) };
 }
 
 function expandPath(path: string): string {

@@ -9,7 +9,9 @@ metabase-axi dashboard list [flags]
 metabase-axi dashboard view <id> [flags]
 ```
 
-Flags: `list`: `--collection <id>`, `--archived`, `--limit <n>`, `--instance <name>`.
+Flags: `list`: `--collection <id>`, `--limit <n>`, `--instance <name>`; `--archived` is
+specified but **not built yet** — it is refused as `USAGE` ("not available yet") rather than
+silently returning the unarchived list.
 `view`: `--json-out[=<path>]` (full dashboard payload to a file), `--instance <name>`.
 
 Parsed strictly per [flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md);

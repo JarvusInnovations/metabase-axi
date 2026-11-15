@@ -72,10 +72,11 @@ An unexpected throw (a bug, a dependency error) is wrapped as `INTERNAL_ERROR` w
 message `unexpected failure: <message>` and a hint to run `metabase-axi doctor`. Raw stack
 traces never reach stdout, where an agent would try to read them as data.
 
-### Commands that are specified but not built
+### Commands and flags that are specified but not built
 
-A command that exists in the spec but not yet in the release says it is **coming in an
-upcoming release** and points at commands that work today. It never points at `specs/` or
+A command or flag that exists in the spec but not yet in the release says it is **coming in
+an upcoming release** and points at commands that work today. A planned flag is declared as
+such and fails as `USAGE` ("not available yet"); its `--help` says the same. It never points at `specs/` or
 `plans/` — an agent using the published package does not have them.
 
 ## Principles

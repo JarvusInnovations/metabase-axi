@@ -1,8 +1,7 @@
-import { AxiError } from "axi-sdk-js";
 import { createClient, instanceLabel } from "../resolve.js";
 import { immediateParent, listCollections } from "../metabase/collection.js";
 import { capList, type StructuredOutput } from "../output.js";
-import { hasFlag, numFlag, parseArgs, strFlag } from "../flags.js";
+import { bool, COLLECTION_FLAGS, int, parseSubcommand, str } from "../flags.js";
 
 export const COLLECTION_HELP = `usage: metabase-axi collection list [flags]
 flags:
@@ -16,34 +15,25 @@ examples:
   metabase-axi collection list --parent 12`;
 
 export async function collectionCommand(args: string[]): Promise<StructuredOutput> {
-  const sub = args[0];
-  let rest: string[];
-  if (sub === "list") rest = args.slice(1);
-  else if (!sub || sub.startsWith("-")) rest = args;
-  else {
-    throw new AxiError(`Unknown collection subcommand: ${sub}`, "VALIDATION_ERROR", [
-      "Run `metabase-axi collection --help` for usage",
-    ]);
-  }
-
-  const parsed = parseArgs(rest, {
-    valued: ["instance", "parent", "namespace", "limit"],
-  });
+  const { parsed } = parseSubcommand("collection", args, COLLECTION_FLAGS, "list");
+  // Validate values before resolving an instance or sending anything.
+  const parentId = int(parsed, "--parent");
+  const parent = parentId === undefined ? undefined : String(parentId);
+  const limit = int(parsed, "--limit") ?? 100;
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
 
-  let cols = await listCollections(client, strFlag(parsed, "namespace"));
-  const wantArchived = hasFlag(parsed, "archived");
+  let cols = await listCollections(client, str(parsed, "--namespace"));
+  const wantArchived = bool(parsed, "--archived");
   cols = cols.filter((c) => (wantArchived ? c.archived : !c.archived));
 
-  const parent = strFlag(parsed, "parent");
   if (parent) {
     cols = cols.filter((c) => immediateParent(c.location) === parent);
   }
 
-  const { items, label } = capList(cols, numFlag(parsed, "limit") ?? 100);
+  const { items, label } = capList(cols, limit);
   const out: StructuredOutput = {
     instance: instanceLabel(instance),
   };

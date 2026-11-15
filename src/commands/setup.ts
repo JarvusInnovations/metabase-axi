@@ -1,4 +1,5 @@
-import { AxiError, installSessionStartHooks } from "axi-sdk-js";
+import { installSessionStartHooks } from "axi-sdk-js";
+import { parseSubcommand, SETUP_FLAGS } from "../flags.js";
 import type { StructuredOutput } from "../output.js";
 
 export const SETUP_HELP = `usage: metabase-axi setup hooks
@@ -9,11 +10,7 @@ export async function setupCommand(
   args: string[],
   opts: { homeDir?: string; shouldInstall?: (execPath: string) => boolean } = {},
 ): Promise<StructuredOutput> {
-  if (args[0] !== "hooks") {
-    throw new AxiError("Unknown setup subcommand", "VALIDATION_ERROR", [
-      "Run `metabase-axi setup hooks`",
-    ]);
-  }
+  parseSubcommand("setup", args, SETUP_FLAGS);
   installSessionStartHooks({
     marker: "metabase-axi",
     binaryNames: ["metabase-axi"],

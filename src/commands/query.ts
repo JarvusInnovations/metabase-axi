@@ -3,8 +3,8 @@ import { createClient } from "../resolve.js";
 import { exportDataset, runDataset, type DatasetQuery } from "../metabase/dataset.js";
 import { resolveDatabaseId } from "../metabase/database.js";
 import { renderQueryResult } from "../result.js";
-import { numFlag, parseArgs, strFlag } from "../flags.js";
-import type { StructuredOutput } from "../output.js";
+import { int, parseFlags, QUERY_FLAGS, str } from "../flags.js";
+import { parseExportRequest, type StructuredOutput } from "../output.js";
 
 export const QUERY_HELP = `usage: metabase-axi query <sql> [flags]
        metabase-axi query -            read native SQL from stdin
@@ -18,9 +18,11 @@ flags:
   --json-out[=path]   write full result as JSON (auto-path if omitted)
   --csv-out[=path]    write full result as CSV
   --xlsx-out[=path]   write full result as XLSX
+notes:
+  - An export path takes "=": --csv-out=./orders.csv (a space form is refused).
 examples:
   metabase-axi query "SELECT 1 AS n" --db 6
-  metabase-axi query "SELECT * FROM orders" --db 6 --csv-out /tmp/orders.csv`;
+  metabase-axi query "SELECT * FROM orders" --db 6 --csv-out=/tmp/orders.csv`;
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -29,18 +31,19 @@ async function readStdin(): Promise<string> {
 }
 
 export async function queryCommand(args: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(args, {
-    valued: ["instance", "db", "mbql", "params", "limit"],
-  });
+  const parsed = parseFlags("query", args, QUERY_FLAGS);
+  // Validate values before resolving an instance or sending anything.
+  int(parsed, "--limit");
+  parseExportRequest(parsed);
   // Ad-hoc queries are potentially expensive → risky resolution (no silent default).
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: true,
   });
 
   let query: DatasetQuery;
   let isMbql = false;
-  const mbqlStr = strFlag(parsed, "mbql");
+  const mbqlStr = str(parsed, "--mbql");
   if (mbqlStr) {
     let mbql: Record<string, unknown>;
     try {
@@ -50,9 +53,13 @@ export async function queryCommand(args: string[]): Promise<StructuredOutput> {
         'Example: --mbql \'{"source-table":42,"limit":10}\'',
       ]);
     }
+    const dbRef = str(parsed, "--db");
     const database =
-      numFlag(parsed, "db") ??
-      (typeof mbql.database === "number" ? (mbql.database as number) : undefined);
+      dbRef !== undefined
+        ? await resolveDatabaseId(client, dbRef)
+        : typeof mbql.database === "number"
+          ? (mbql.database as number)
+          : undefined;
     if (database === undefined) {
       throw new AxiError("--db is required for an MBQL query", "VALIDATION_ERROR", [
         "Pass --db <id|name>, or include a database in the MBQL JSON",
@@ -62,16 +69,16 @@ export async function queryCommand(args: string[]): Promise<StructuredOutput> {
     query = { database, type: "query", query: inner };
     isMbql = true;
   } else {
-    let sql = parsed.positionals[0];
+    let sql = parsed.positional[0];
     if (sql === "-") sql = await readStdin();
     if (!sql) {
       throw new AxiError("Provide a SQL string, `-` for stdin, or --mbql", "VALIDATION_ERROR", [
         'metabase-axi query "SELECT 1" --db <id|name>',
       ]);
     }
-    const database = await resolveDatabaseId(client, strFlag(parsed, "db"));
+    const database = await resolveDatabaseId(client, str(parsed, "--db"));
     query = { database, type: "native", native: { query: sql } };
-    const paramsStr = strFlag(parsed, "params");
+    const paramsStr = str(parsed, "--params");
     if (paramsStr) {
       try {
         query.parameters = JSON.parse(paramsStr) as unknown[];
