@@ -4,11 +4,12 @@ import { exportCard, getCard, listCards, runCard } from "../metabase/card.js";
 import { renderQueryResult } from "../result.js";
 import {
   capList,
+  parseExportRequest,
   relativeTime,
   truncateCell,
   type StructuredOutput,
 } from "../output.js";
-import { hasFlag, numFlag, parseArgs, strFlag } from "../flags.js";
+import { bool, CARD_FLAGS, int, parseSubcommand, requireId, str, type Parsed } from "../flags.js";
 
 export const CARD_HELP = `usage: metabase-axi card <subcommand> [flags]
 subcommands[3]:
@@ -18,57 +19,50 @@ subcommands[3]:
 flags{list}:
   --mine, --archived, --db <id>, --collection <id>, --limit <n>, --instance <name>
 flags{run}:
-  --params <json>, --limit <n>, --json-out, --csv-out, --xlsx-out, --instance <name>
+  --params <json>, --limit <n>, --json-out[=path], --csv-out[=path], --xlsx-out[=path],
+  --instance <name>
+flags{view}:
+  --instance <name>
 examples:
   metabase-axi card list --mine
-  metabase-axi card run 42 --csv-out`;
+  metabase-axi card run 42 --csv-out
+  metabase-axi card run 42 --json-out=./card-42.json`;
 
 export async function cardCommand(args: string[]): Promise<StructuredOutput> {
-  const sub = args[0];
-  const rest = args.slice(1);
+  const { sub, parsed } = parseSubcommand("card", args, CARD_FLAGS, "list");
   switch (sub) {
-    case undefined:
-    case "list":
-      return cardList(rest);
     case "view":
-      return cardView(rest);
+      return cardView(parsed);
     case "run":
-      return cardRun(rest);
+      return cardRun(parsed);
     default:
-      throw new AxiError(`Unknown card subcommand: ${sub}`, "VALIDATION_ERROR", [
-        "Run `metabase-axi card --help` for usage",
-      ]);
+      return cardList(parsed);
   }
 }
 
-async function cardList(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, {
-    valued: ["instance", "db", "collection", "limit"],
-  });
+async function cardList(parsed: Parsed): Promise<StructuredOutput> {
+  // Validate values before resolving an instance or sending anything.
+  const dbFilter = int(parsed, "--db");
+  const collFilter = int(parsed, "--collection");
+  const limit = int(parsed, "--limit") ?? 30;
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
 
-  const filter = hasFlag(parsed, "archived")
-    ? "archived"
-    : hasFlag(parsed, "mine")
-      ? "mine"
-      : "all";
+  const filter = bool(parsed, "--archived") ? "archived" : bool(parsed, "--mine") ? "mine" : "all";
   let cards = await listCards(client, filter);
 
-  const dbFilter = strFlag(parsed, "db");
-  if (dbFilter) {
+  if (dbFilter !== undefined) {
     cards = cards.filter(
-      (c) => String(c.database_id ?? c.dataset_query?.database ?? "") === dbFilter,
+      (c) => String(c.database_id ?? c.dataset_query?.database ?? "") === String(dbFilter),
     );
   }
-  const collFilter = strFlag(parsed, "collection");
-  if (collFilter) {
-    cards = cards.filter((c) => String(c.collection_id ?? "") === collFilter);
+  if (collFilter !== undefined) {
+    cards = cards.filter((c) => String(c.collection_id ?? "") === String(collFilter));
   }
 
-  const { items, label } = capList(cards, numFlag(parsed, "limit") ?? 30);
+  const { items, label } = capList(cards, limit);
   const out: StructuredOutput = {
     instance: instanceLabel(instance),
     cards: items.map((c) => ({
@@ -87,19 +81,13 @@ async function cardList(rest: string[]): Promise<StructuredOutput> {
   return out;
 }
 
-async function cardView(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance"] });
-  const id = parsed.positionals[0];
-  if (!id) {
-    throw new AxiError("A card id is required", "VALIDATION_ERROR", [
-      "metabase-axi card view <id>",
-    ]);
-  }
+async function cardView(parsed: Parsed): Promise<StructuredOutput> {
+  const id = requireId(parsed, 0, "A card id", "metabase-axi card view <id>");
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
-  const card = await getCard(client, Number(id));
+  const card = await getCard(client, id);
   const dq = card.dataset_query;
 
   const out: StructuredOutput = {
@@ -127,22 +115,19 @@ async function cardView(rest: string[]): Promise<StructuredOutput> {
   return out;
 }
 
-async function cardRun(rest: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(rest, { valued: ["instance", "params", "limit"] });
-  const id = parsed.positionals[0];
-  if (!id) {
-    throw new AxiError("A card id is required", "VALIDATION_ERROR", [
-      "metabase-axi card run <id>",
-    ]);
-  }
+async function cardRun(parsed: Parsed): Promise<StructuredOutput> {
+  const id = requireId(parsed, 0, "A card id", "metabase-axi card run <id>");
+  // Validate values before resolving an instance or sending anything.
+  int(parsed, "--limit");
+  parseExportRequest(parsed);
   // Card execution is potentially expensive → risky resolution.
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: true,
   });
 
   let parameters: unknown[] | undefined;
-  const paramsStr = strFlag(parsed, "params");
+  const paramsStr = str(parsed, "--params");
   if (paramsStr) {
     try {
       parameters = JSON.parse(paramsStr) as unknown[];
@@ -153,13 +138,13 @@ async function cardRun(rest: string[]): Promise<StructuredOutput> {
     }
   }
 
-  const result = await runCard(client, Number(id), parameters);
+  const result = await runCard(client, id, parameters);
   return renderQueryResult({
     instance,
     result,
     parsed,
     kind: `card-${id}`,
     showCompiledSql: true,
-    exportBytes: (format) => exportCard(client, Number(id), format, parameters),
+    exportBytes: (format) => exportCard(client, id, format, parameters),
   });
 }

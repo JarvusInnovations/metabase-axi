@@ -5,7 +5,9 @@ import { join } from "node:path";
 import { AxiError } from "axi-sdk-js";
 import { renderQueryResult } from "../src/result.js";
 import { resolveDatabaseId } from "../src/metabase/database.js";
-import { parseArgs } from "../src/flags.js";
+import { parseFlags, QUERY_FLAGS } from "../src/flags.js";
+
+const parseArgs = (argv: string[]) => parseFlags("query", argv, QUERY_FLAGS);
 import type { ResolvedInstance } from "../src/resolve.js";
 import type { QueryResult } from "../src/metabase/dataset.js";
 import type { MetabaseClient } from "../src/metabase/client.js";
@@ -54,7 +56,7 @@ describe("renderQueryResult", () => {
     const out = await renderQueryResult({
       instance,
       result: completed(100),
-      parsed: parseArgs(["--limit", "5"], { valued: ["limit"] }),
+      parsed: parseArgs(["--limit", "5"]),
       kind: "query",
       exportBytes: noExport,
     });
@@ -158,7 +160,12 @@ describe("resolveDatabaseId", () => {
   });
   it("errors on ambiguity with multiple databases", async () => {
     await expect(
-      resolveDatabaseId(fake([{ id: 1, name: "a" }, { id: 2, name: "b" }])),
+      resolveDatabaseId(
+        fake([
+          { id: 1, name: "a" },
+          { id: 2, name: "b" },
+        ]),
+      ),
     ).rejects.toBeInstanceOf(AxiError);
   });
 });

@@ -13,9 +13,7 @@ export async function listCollections(
   client: MetabaseClient,
   namespace?: string,
 ): Promise<Collection[]> {
-  return normalizeList<Collection>(
-    await client.get("/api/collection", { query: { namespace } }),
-  );
+  return normalizeList<Collection>(await client.get("/api/collection", { query: { namespace } }));
 }
 
 /** The immediate parent id from a collection `location` path ("/1/2/" → "2"); undefined at top level. */

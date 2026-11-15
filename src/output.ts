@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { AxiError } from "axi-sdk-js";
-import { hasFlag, type ParsedArgs } from "./flags.js";
+import { bool, str, type Parsed } from "./flags.js";
 
 export type StructuredOutput = Record<string, unknown>;
 export type Renderable = string | StructuredOutput;
@@ -21,13 +21,16 @@ export type Renderable = string | StructuredOutput;
 export const PREVIEW_ROW_CAP = 20;
 export const CELL_CHAR_CAP = 120;
 
-/** A structured "not implemented yet" notice for stub commands. */
+/**
+ * A structured "not available yet" notice for stub commands. It points at what works today
+ * and never at repo files: an agent using the published package has no `specs/` or `plans/`.
+ */
 export function notImplemented(command: string): StructuredOutput {
   return {
-    message: `\`metabase-axi ${command}\` is not implemented yet`,
+    message: `\`metabase-axi ${command}\` is not available yet — coming in an upcoming release`,
     help: [
-      "This command is planned — see specs/commands/ and plans/ for the spec",
-      "Run `metabase-axi --help` to see available commands",
+      "Available today: query, card, db, search, dashboard, collection, auth, doctor, setup",
+      "Run `metabase-axi --help` for the commands that work in this version",
     ],
   };
 }
@@ -77,10 +80,7 @@ export function countLabel(shown: number, total: number): string {
 }
 
 /** Cap a list and report the count label together. */
-export function capList<T>(
-  items: T[],
-  limit: number,
-): { items: T[]; label: string } {
+export function capList<T>(items: T[], limit: number): { items: T[]; label: string } {
   const capped = items.slice(0, limit);
   return { items: capped, label: countLabel(capped.length, items.length) };
 }
@@ -115,9 +115,9 @@ export function relativeTime(iso?: string): string {
 export type ExportFormat = "json" | "csv" | "xlsx";
 
 const OUT_FLAGS: Record<string, ExportFormat> = {
-  "json-out": "json",
-  "csv-out": "csv",
-  "xlsx-out": "xlsx",
+  "--json-out": "json",
+  "--csv-out": "csv",
+  "--xlsx-out": "xlsx",
 };
 
 export interface ExportRequest {
@@ -127,19 +127,16 @@ export interface ExportRequest {
 }
 
 /** Parse the export flags; at most one `*-out` is allowed. Returns undefined when none. */
-export function parseExportRequest(parsed: ParsedArgs): ExportRequest | undefined {
-  const present = Object.keys(OUT_FLAGS).filter((f) => hasFlag(parsed, f));
+export function parseExportRequest(parsed: Parsed): ExportRequest | undefined {
+  const present = Object.keys(OUT_FLAGS).filter((f) => bool(parsed, f));
   if (present.length === 0) return undefined;
   if (present.length > 1) {
-    throw new AxiError(
-      "Use at most one export flag per invocation",
-      "VALIDATION_ERROR",
-      [`Got: ${present.map((f) => `--${f}`).join(", ")}`],
-    );
+    throw new AxiError("Use at most one export flag per invocation", "VALIDATION_ERROR", [
+      `Got: ${present.join(", ")}`,
+    ]);
   }
   const flag = present[0];
-  const value = parsed.flags[flag];
-  return { format: OUT_FLAGS[flag], path: typeof value === "string" ? value : undefined };
+  return { format: OUT_FLAGS[flag], path: str(parsed, flag) };
 }
 
 function expandPath(path: string): string {

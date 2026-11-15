@@ -20,7 +20,10 @@ describe("MetabaseClient", () => {
         return res(200, { ok: true });
       }),
     );
-    const c = new MetabaseClient({ baseUrl: "https://h", auth: { scheme: "api_key", apiKey: "K" } });
+    const c = new MetabaseClient({
+      baseUrl: "https://h",
+      auth: { scheme: "api_key", apiKey: "K" },
+    });
     expect(await c.get("/api/x")).toEqual({ ok: true });
     expect((calls[0].init.headers as Record<string, string>)["X-API-Key"]).toBe("K");
   });
@@ -71,8 +74,14 @@ describe("MetabaseClient", () => {
   });
 
   it("maps 404 → NOT_FOUND and network errors → UNREACHABLE", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => res(404, { message: "nope" })));
-    const c1 = new MetabaseClient({ baseUrl: "https://h", auth: { scheme: "api_key", apiKey: "K" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => res(404, { message: "nope" })),
+    );
+    const c1 = new MetabaseClient({
+      baseUrl: "https://h",
+      auth: { scheme: "api_key", apiKey: "K" },
+    });
     await expect(c1.get("/api/x")).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     vi.stubGlobal(
@@ -81,7 +90,10 @@ describe("MetabaseClient", () => {
         throw new Error("ECONNREFUSED");
       }),
     );
-    const c2 = new MetabaseClient({ baseUrl: "https://h", auth: { scheme: "api_key", apiKey: "K" } });
+    const c2 = new MetabaseClient({
+      baseUrl: "https://h",
+      auth: { scheme: "api_key", apiKey: "K" },
+    });
     await expect(c2.get("/api/x")).rejects.toMatchObject({ code: "UNREACHABLE" });
   });
 });

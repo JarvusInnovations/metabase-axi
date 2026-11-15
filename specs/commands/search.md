@@ -9,8 +9,12 @@ id is unknown.
 metabase-axi search <query> [flags]
 ```
 
-Flags: `--type <card|dashboard|collection|table|dataset>` (repeatable), `--limit <n>`,
-`--instance <name>`.
+Flags: `--type <models>` (comma-separated, drawn from
+`card|dashboard|collection|table|dataset`), `--limit <n>`, `--instance <name>`.
+
+Parsed strictly per [flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md): an
+unknown `--type` model is a `VALIDATION_ERROR` listing the allowed values, never an
+unfiltered search.
 
 ## Data Requirements
 

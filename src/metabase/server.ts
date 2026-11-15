@@ -30,9 +30,7 @@ export async function databaseCount(client: MetabaseClient): Promise<number> {
 /** Best-effort server version tag; undefined if unavailable. */
 export async function serverVersion(client: MetabaseClient): Promise<string | undefined> {
   try {
-    const props = await client.get<{ version?: { tag?: string } }>(
-      "/api/session/properties",
-    );
+    const props = await client.get<{ version?: { tag?: string } }>("/api/session/properties");
     return props?.version?.tag;
   } catch {
     return undefined;

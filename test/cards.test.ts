@@ -6,7 +6,9 @@ describe("dashcardsOf", () => {
 
   it("prefers dashcards, falls back to ordered_cards, else empty", () => {
     expect(dashcardsOf({ ...base, dashcards: [{ card_id: 1 }] })).toHaveLength(1);
-    expect(dashcardsOf({ ...base, ordered_cards: [{ card_id: 1 }, { card_id: 2 }] })).toHaveLength(2);
+    expect(dashcardsOf({ ...base, ordered_cards: [{ card_id: 1 }, { card_id: 2 }] })).toHaveLength(
+      2,
+    );
     expect(dashcardsOf(base)).toEqual([]);
   });
 });

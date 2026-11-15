@@ -60,14 +60,10 @@ export function resolveInstance(opts: ResolveOptions = {}): ResolvedInstance {
   const envUrl = process.env.METABASE_URL;
   if (envUrl) {
     if (!hasEnvCreds()) {
-      throw new AxiError(
-        "METABASE_URL is set but no env credentials were found",
-        "CONFIG",
-        [
-          "Set METABASE_API_KEY (or METABASE_USERNAME + METABASE_PASSWORD)",
-          "Or unset METABASE_URL to use a configured profile",
-        ],
-      );
+      throw new AxiError("METABASE_URL is set but no env credentials were found", "CONFIG", [
+        "Set METABASE_API_KEY (or METABASE_USERNAME + METABASE_PASSWORD)",
+        "Or unset METABASE_URL to use a configured profile",
+      ]);
     }
     return { name: "env", url: envUrl, source: "env" };
   }
@@ -120,10 +116,7 @@ export function resolveInstance(opts: ResolveOptions = {}): ResolvedInstance {
 }
 
 /** Resolve credentials for an instance per specs/behaviors/credential-resolution.md. */
-export function resolveCredentials(
-  instance: ResolvedInstance,
-  cfg: Config,
-): ResolvedAuth {
+export function resolveCredentials(instance: ResolvedInstance, cfg: Config): ResolvedAuth {
   if (instance.source === "env") {
     const apiKey = process.env.METABASE_API_KEY;
     if (apiKey) return { scheme: "api_key", apiKey };

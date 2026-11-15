@@ -2,7 +2,7 @@ import { AxiError } from "axi-sdk-js";
 import { hostOf } from "../config.js";
 import { createClient, instanceLabel } from "../resolve.js";
 import { currentUser, databaseCount } from "../metabase/server.js";
-import { parseArgs, strFlag } from "../flags.js";
+import { DOCTOR_FLAGS, parseFlags, str } from "../flags.js";
 import type { StructuredOutput } from "../output.js";
 
 export const DOCTOR_HELP = `usage: metabase-axi doctor [flags]
@@ -20,8 +20,8 @@ interface Check {
 }
 
 export async function doctorCommand(args: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(args, { valued: ["instance"] });
-  const instanceFlag = strFlag(parsed, "instance");
+  const parsed = parseFlags("doctor", args, DOCTOR_FLAGS);
+  const instanceFlag = str(parsed, "--instance");
 
   let resolved;
   try {

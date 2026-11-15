@@ -1,5 +1,5 @@
 import { AxiError } from "axi-sdk-js";
-import { numFlag, type ParsedArgs } from "./flags.js";
+import { int, type Parsed } from "./flags.js";
 import {
   columnsLine,
   countLabel,
@@ -15,7 +15,7 @@ import type { QueryResult } from "./metabase/dataset.js";
 export interface RenderResultOptions {
   instance: ResolvedInstance;
   result: QueryResult;
-  parsed: ParsedArgs;
+  parsed: Parsed;
   /** Filename stem for an auto-generated export (e.g. "query", "card-42"). */
   kind: string;
   /** Database id to echo; falls back to the result's database_id. */
@@ -31,9 +31,7 @@ export interface RenderResultOptions {
  * file. Shared by `query` and `card run` so both render identically.
  * (specs/behaviors/result-export-and-truncation.md + output-rendering.md)
  */
-export async function renderQueryResult(
-  opts: RenderResultOptions,
-): Promise<StructuredOutput> {
+export async function renderQueryResult(opts: RenderResultOptions): Promise<StructuredOutput> {
   const { instance, result, parsed, kind } = opts;
 
   if (result.status === "failed") {
@@ -44,7 +42,7 @@ export async function renderQueryResult(
 
   const cols = result.data?.cols ?? [];
   const rows = result.data?.rows ?? [];
-  const limit = numFlag(parsed, "limit") ?? PREVIEW_ROW_CAP;
+  const limit = int(parsed, "--limit") ?? PREVIEW_ROW_CAP;
   const total = result.row_count ?? rows.length;
   const database = opts.database ?? result.database_id;
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { AxiError } from "axi-sdk-js";
 import {
   capList,
+  notImplemented,
   columnsLine,
   countLabel,
   parseExportRequest,
@@ -15,7 +16,13 @@ import {
   truncateCell,
   PREVIEW_ROW_CAP,
 } from "../src/output.js";
-import { parseArgs } from "../src/flags.js";
+import { parseFlags, type FlagSpec } from "../src/flags.js";
+
+const EXPORTS: FlagSpec = {
+  optional: ["--json-out", "--csv-out", "--xlsx-out"],
+  positionals: 1,
+};
+const parseArgs = (argv: string[]) => parseFlags("demo", argv, EXPORTS);
 
 describe("preview helpers", () => {
   it("shortType strips the type/ prefix", () => {
@@ -24,9 +31,12 @@ describe("preview helpers", () => {
   });
 
   it("columnsLine renders name:type pairs", () => {
-    expect(columnsLine([{ name: "id", base_type: "type/Integer" }, { name: "n", base_type: "type/Text" }])).toBe(
-      "id:Integer, n:Text",
-    );
+    expect(
+      columnsLine([
+        { name: "id", base_type: "type/Integer" },
+        { name: "n", base_type: "type/Text" },
+      ]),
+    ).toBe("id:Integer, n:Text");
   });
 
   it("truncateCell marks long strings and passes others through", () => {
@@ -77,7 +87,10 @@ describe("export flags + writing", () => {
   });
 
   it("parses a single export flag with and without a path", () => {
-    expect(parseExportRequest(parseArgs(["--json-out"]))).toEqual({ format: "json", path: undefined });
+    expect(parseExportRequest(parseArgs(["--json-out"]))).toEqual({
+      format: "json",
+      path: undefined,
+    });
     expect(parseExportRequest(parseArgs(["--csv-out=/tmp/x.csv"]))).toEqual({
       format: "csv",
       path: "/tmp/x.csv",
@@ -112,5 +125,17 @@ describe("export flags + writing", () => {
     expect(statSync(outcome.path).mode & 0o777).toBe(0o600);
     expect(outcome.helpLine).toContain("head");
     rmSync(outcome.path, { force: true });
+  });
+});
+
+describe("notImplemented", () => {
+  it("says the command is coming and points at what works today, not at repo files", () => {
+    const out = notImplemented("card create");
+    const text = [out.message, ...(out.help as string[])].join("\n");
+    expect(out.message).toContain("`metabase-axi card create` is not available yet");
+    expect(out.message).toContain("coming in an upcoming release");
+    expect(text).toContain("Available today: query, card, db, search");
+    expect(text).toContain("metabase-axi --help");
+    expect(text).not.toMatch(/specs\/|plans\//);
   });
 });
