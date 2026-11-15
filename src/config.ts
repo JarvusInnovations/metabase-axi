@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -78,6 +78,8 @@ export function writeConfig(cfg: Config): void {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
   // Restrictive perms: the file holds API keys / passwords.
   writeFileSync(configPath(), `${JSON.stringify(cfg, null, 2)}\n`, { mode: 0o600 });
+  // `mode` only applies when the file is created; tighten one that already existed.
+  chmodSync(configPath(), 0o600);
 }
 
 // Profile helpers ─────────────────────────────────────────────────────
