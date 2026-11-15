@@ -70,6 +70,9 @@ need them — never for `--help`/`--version`/`setup`). See
 
 - **Config dir:** `$METABASE_AXI_CONFIG_DIR`, else `$XDG_CONFIG_HOME/metabase-axi`, else
   `~/.config/metabase-axi/`. Config file: `config.json`.
+  The file holds credentials, so it is owner-only (`0600`, directory `0700`), and the mode
+  is re-applied after every write — a mode passed at creation does not tighten a file that
+  already exists.
 - **Named profiles:** the config file holds one or more named instance profiles
   (e.g. `prod`, `staging`), each with a base URL, auth material, and a cached profile
   summary. One profile is the default. Selected per-command via `--instance <name>`.

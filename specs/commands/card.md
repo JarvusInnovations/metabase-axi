@@ -14,7 +14,13 @@ Flags:
 
 - `list`: `--mine`, `--archived`, `--db <id>`, `--collection <id>`, `--limit <n>`,
   `--instance <name>`.
-- `run`: `--params <json>`, `--limit <n>`, `--json-out`/`--csv-out`/`--xlsx-out`, `--instance <name>`.
+- `run`: `--params <json>`, `--limit <n>`,
+  `--json-out[=<path>]`/`--csv-out[=<path>]`/`--xlsx-out[=<path>]`, `--instance <name>`.
+
+Arguments are parsed strictly per
+[flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md). `<id>`, `--db`,
+`--collection` and `--limit` must be whole numbers; anything else is a `VALIDATION_ERROR`
+rather than an empty or unfiltered list.
 
 ## Data Requirements
 

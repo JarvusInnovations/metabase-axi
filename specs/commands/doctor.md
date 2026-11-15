@@ -9,6 +9,9 @@ they come from. Mandatory family command.
 metabase-axi doctor [--instance <name>]
 ```
 
+No other flags and no positionals; anything else is refused with exit 2
+([flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md)).
+
 ## Data Requirements
 
 For the resolved instance + credentials

@@ -10,7 +10,10 @@ metabase-axi dashboard view <id> [flags]
 ```
 
 Flags: `list`: `--collection <id>`, `--archived`, `--limit <n>`, `--instance <name>`.
-`view`: `--instance <name>`.
+`view`: `--json-out[=<path>]` (full dashboard payload to a file), `--instance <name>`.
+
+Parsed strictly per [flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md);
+`<id>`, `--collection` and `--limit` must be whole numbers.
 
 ## Data Requirements
 

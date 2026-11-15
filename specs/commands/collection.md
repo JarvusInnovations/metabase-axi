@@ -10,7 +10,9 @@ metabase-axi collection list [flags]
 ```
 
 Flags: `--parent <id>` (children of one collection), `--archived`, `--namespace <ns>`,
-`--limit <n>`, `--instance <name>`.
+`--limit <n>`, `--instance <name>`. Parsed strictly per
+[flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md); `--parent` and `--limit`
+must be whole numbers.
 
 ## Data Requirements
 

@@ -30,6 +30,7 @@ specs/
 │   ├── instance-resolution.md
 │   ├── credential-resolution.md
 │   ├── output-rendering.md
+│   ├── flag-parsing-and-errors.md
 │   └── result-export-and-truncation.md
 └── commands/            # one file per CLI command (the analog of "screens")
     ├── home.md

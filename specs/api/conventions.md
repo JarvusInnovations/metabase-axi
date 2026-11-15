@@ -42,6 +42,11 @@ suggestions (see [principles.md#surface-the-contract-dont-hide-metabase](../prin
 A failed **query** (`status: "failed"` in a 2xx body) is a `QUERY_ERROR`, not a transport
 error — surface `data.error` from the result body.
 
+All of the codes above exit 1: the invocation was valid and the operation failed. Malformed
+invocations (`USAGE`, `UNKNOWN_FLAG`, `VALIDATION_ERROR`) exit 2, and anything unanticipated
+is wrapped as `INTERNAL_ERROR` (exit 1) — see
+[flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md#error-shape-and-exit-codes).
+
 ## Query & data endpoints (Tier 1 core)
 
 | Method · Path | Purpose |
