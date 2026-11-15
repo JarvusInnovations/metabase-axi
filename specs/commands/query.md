@@ -20,6 +20,11 @@ Flags:
   file (see [result-export-and-truncation](../behaviors/result-export-and-truncation.md)).
 - `--params <json>` — parameters/template-tag values for parameterized SQL.
 
+Exactly one positional (the SQL, or `-`). Arguments are parsed strictly per
+[flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md): an unknown flag, a
+second positional, or a non-numeric `--limit` fails with exit 2 before any request. An
+export path takes `=` (`--csv-out=./orders.csv`).
+
 ## Data Requirements
 
 Executes an **ad-hoc** query via `POST /api/dataset` (never persists anything). Body is a

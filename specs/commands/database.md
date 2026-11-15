@@ -6,12 +6,15 @@ lacked. Command alias: `db`.
 ## Invocation
 
 ```
-metabase-axi db list [--instance <name>]
+metabase-axi db list [--limit <n>] [--instance <name>]
 metabase-axi db schema <id|name> [flags]
 ```
 
 `schema` flags: `--table <name>` (filter to one table), `--search <substr>` (filter
-tables/fields by substring), `--instance <name>`.
+tables/fields by substring), `--limit <n>`, `--json-out[=<path>]` (full metadata to a
+file), `--instance <name>`.
+
+Parsed strictly per [flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md).
 
 ## Data Requirements
 

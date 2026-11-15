@@ -9,6 +9,9 @@ Thin wrapper over the SDK's `installSessionStartHooks`.
 metabase-axi setup hooks
 ```
 
+No flags and no further positionals; anything else is refused with exit 2
+([flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md)).
+
 ## Data Requirements
 
 None from Metabase. Calls `installSessionStartHooks({ marker, binaryNames })` from

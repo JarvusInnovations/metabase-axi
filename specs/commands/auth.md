@@ -13,6 +13,11 @@ metabase-axi auth login [<name>]        # obtain/refresh a session token (sessio
 metabase-axi auth remove <name>
 ```
 
+Parsed strictly per [flag-parsing-and-errors](../behaviors/flag-parsing-and-errors.md): each
+subcommand takes only the flags and the one positional shown. `auth login` also accepts the
+global `--instance <name>` in place of the positional; the other subcommands do not resolve
+an instance and refuse it.
+
 ## Data Requirements
 
 - Reads/writes the config file (profiles + default) per

@@ -43,5 +43,9 @@ stored config for CI/one-offs. Multiple instances are named profiles; select wit
   explicit `--instance` when multiple profiles exist (never guesses the target).
 - Output is TOON. Long results truncate with an explicit marker — use the `*-out` flags for
   the complete data rather than widening the preview.
+- An export path rides on `=`: `--csv-out` alone writes an auto-named temp file,
+  `--csv-out=./orders.csv` writes where you say. `--csv-out ./orders.csv` is refused.
+- Arguments are strict: an unknown flag, an extra positional or a malformed value exits 2 and
+  the error lists the valid flags. Failed operations (auth, not found, query error) exit 1.
 - This tool is read/query-focused (Tier 1). Creating or editing cards/dashboards is not yet
   supported.

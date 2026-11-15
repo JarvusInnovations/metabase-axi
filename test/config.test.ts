@@ -1,5 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { chmodSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
+  configPath,
+  readConfig,
+  writeConfig,
   defaultConfig,
   hostOf,
   listProfileNames,
@@ -39,5 +45,33 @@ describe("config profile helpers", () => {
   it("extracts a host from a url, falling back to the raw string", () => {
     expect(hostOf("https://metabase.example.org/api")).toBe("metabase.example.org");
     expect(hostOf("not a url")).toBe("not a url");
+  });
+});
+
+describe("writeConfig", () => {
+  let dir: string;
+  let savedDir: string | undefined;
+  beforeEach(() => {
+    savedDir = process.env.METABASE_AXI_CONFIG_DIR;
+    dir = mkdtempSync(join(tmpdir(), "mb-axi-config-"));
+    process.env.METABASE_AXI_CONFIG_DIR = dir;
+  });
+  afterEach(() => {
+    if (savedDir === undefined) delete process.env.METABASE_AXI_CONFIG_DIR;
+    else process.env.METABASE_AXI_CONFIG_DIR = savedDir;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("creates the config file owner-only", () => {
+    writeConfig(setProfile(defaultConfig(), "acme", { url: "https://a", auth: { api_key: "k" } }));
+    expect(statSync(configPath()).mode & 0o777).toBe(0o600);
+    expect(readConfig().default).toBe("acme");
+  });
+
+  it("tightens a config file that already existed with looser permissions", () => {
+    writeFileSync(configPath(), "{}\n");
+    chmodSync(configPath(), 0o644);
+    writeConfig(setProfile(defaultConfig(), "acme", { url: "https://a", auth: { api_key: "k" } }));
+    expect(statSync(configPath()).mode & 0o777).toBe(0o600);
   });
 });

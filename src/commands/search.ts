@@ -1,8 +1,7 @@
-import { AxiError } from "axi-sdk-js";
 import { createClient, instanceLabel } from "../resolve.js";
 import { search, type SearchItem } from "../metabase/search.js";
 import { capList, type StructuredOutput } from "../output.js";
-import { numFlag, parseArgs, strFlag } from "../flags.js";
+import { choices, int, parseFlags, requirePositional, SEARCH_FLAGS, str } from "../flags.js";
 
 export const SEARCH_HELP = `usage: metabase-axi search <query> [flags]
 flags:
@@ -13,29 +12,28 @@ examples:
   metabase-axi search "revenue"
   metabase-axi search "orders" --type table,card`;
 
+/** The models `--type` accepts (specs/commands/search.md). */
+export const SEARCH_MODELS = ["card", "dashboard", "collection", "table", "dataset"] as const;
+
 function collectionName(item: SearchItem): string {
   return item.collection?.name ?? "";
 }
 
 export async function searchCommand(args: string[]): Promise<StructuredOutput> {
-  const parsed = parseArgs(args, { valued: ["instance", "limit", "type"] });
-  const query = parsed.positionals[0];
-  if (!query) {
-    throw new AxiError("A search query is required", "VALIDATION_ERROR", [
-      'metabase-axi search "<query>"',
-    ]);
-  }
+  const parsed = parseFlags("search", args, SEARCH_FLAGS);
+  const query = requirePositional(
+    parsed,
+    0,
+    "A search query",
+    'metabase-axi search "<query>" [--type <models>]',
+  );
+  // An unknown model must not turn into an unfiltered search.
+  const models = choices(parsed, "--type", SEARCH_MODELS);
+  const limit = int(parsed, "--limit") ?? 30;
   const { instance, client } = createClient({
-    instanceFlag: strFlag(parsed, "instance"),
+    instanceFlag: str(parsed, "--instance"),
     risky: false,
   });
-  const typeStr = strFlag(parsed, "type");
-  const models = typeStr
-    ? typeStr
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : undefined;
 
   const items = await search(client, query, models);
   if (items.length === 0) {
@@ -46,7 +44,7 @@ export async function searchCommand(args: string[]): Promise<StructuredOutput> {
     };
   }
 
-  const { items: capped, label } = capList(items, numFlag(parsed, "limit") ?? 30);
+  const { items: capped, label } = capList(items, limit);
   const out: StructuredOutput = {
     instance: instanceLabel(instance),
     results: capped.map((it) => ({

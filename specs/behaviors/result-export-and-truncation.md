@@ -41,7 +41,14 @@ inference, no `--format` selector. The flag names the format outright (no magic)
 
 Rules common to all three:
 
-- The `=<path>` is optional. When omitted, the tool auto-generates
+- The path is optional and rides on `=`, never on a space: `--csv-out` or
+  `--csv-out=./orders.csv`. The space form (`--csv-out ./orders.csv`) is a `USAGE` error
+  whose message names the `=` form. A token after a bare `*-out` flag is never consumed as
+  its path, so the next positional (often an id) cannot be swallowed.
+- Export is offered only where listed under [Applies To](#applies-to) with a format that
+  command supports (`db schema` and `dashboard view` are JSON only). On any other command
+  the flag is refused before any request, with a pointer to the commands that support it.
+- When the path is omitted, the tool auto-generates
   `<os-temp-dir>/metabase-axi/<UTC-timestamp>-<kind>.<ext>` and reports the path. An
   auto-generated export is **ephemeral scratch**, so it goes in the OS temp dir (which the
   OS prunes) — never under `~/.config` (durable state that nothing prunes). An explicit
@@ -49,7 +56,8 @@ Rules common to all three:
 - **Auto-generated export files are written `0600`** (owner-only) — query results can be
   sensitive and the OS temp dir is world-readable on some platforms. An explicit path is
   the caller's responsibility and is written with the default umask.
-- At most one `*-out` flag per invocation; combining them is a validation error.
+- At most one `*-out` flag per invocation; combining them is a `VALIDATION_ERROR`.
+- There is no `--json` stdout mode; `--json` is refused with a hint naming `--json-out`.
 - When a file is written, stdout adds:
   - a `wrote:` line — `wrote: <path> (<row_count> rows, <col_count> cols)`;
   - a `columns:` line listing column names (so follow-up `jq` can be written without
