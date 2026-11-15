@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 depends: [output-foundation, query-and-dataset, cards-and-dashboards, discovery, config-and-auth]
 specs:
   - specs/behaviors/flag-parsing-and-errors.md
@@ -71,25 +71,25 @@ Out (each its own plan):
 
 ## Validation
 
-- [ ] Every command and subcommand rejects an unknown flag with `UNKNOWN_FLAG`, exit 2, and
+- [x] Every command and subcommand rejects an unknown flag with `UNKNOWN_FLAG`, exit 2, and
       a message listing that command's flags (sweep test over the table).
-- [ ] Extra positionals, a value flag without a value, a switch with a value and a repeated
+- [x] Extra positionals, a value flag without a value, a switch with a value and a repeated
       flag fail as `USAGE`; non-numeric `--limit`/ids and unknown `--type` models fail as
       `VALIDATION_ERROR`; all before any config read or request.
-- [ ] `--csv-out /tmp/x.csv` fails as `USAGE` naming `--csv-out=/tmp/x.csv`;
+- [x] `--csv-out /tmp/x.csv` fails as `USAGE` naming `--csv-out=/tmp/x.csv`;
       `card run --csv-out 42` keeps `42` as the id; `--csv-out=path` and bare `--csv-out`
       still export.
-- [ ] `formatError` maps `USAGE`/`UNKNOWN_FLAG`/`VALIDATION_ERROR` to exit 2, other
+- [x] `formatError` maps `USAGE`/`UNKNOWN_FLAG`/`VALIDATION_ERROR` to exit 2, other
       `AxiError`s to 1, and wraps a raw throw as `INTERNAL_ERROR` with a `doctor` hint and no
       stack trace; it is wired into `runAxiCli`.
-- [ ] Every declared flag appears in its command's `--help`, and every flag in `--help` is
+- [x] Every declared flag appears in its command's `--help`, and every flag in `--help` is
       declared.
-- [ ] The `query` help example uses `--csv-out=/tmp/orders.csv`.
-- [ ] `notImplemented()` says "coming in an upcoming release" and names no repo paths.
-- [ ] Writing the config over an existing `0644` file leaves it `0600`.
-- [ ] CI runs a real command on the built binary with no credentials and requires a
+- [x] The `query` help example uses `--csv-out=/tmp/orders.csv`.
+- [x] `notImplemented()` says "coming in an upcoming release" and names no repo paths.
+- [x] Writing the config over an existing `0644` file leaves it `0600`.
+- [x] CI runs a real command on the built binary with no credentials and requires a
       structured error with no stack trace.
-- [ ] lint, format check, typecheck, build and the full test suite are green.
+- [x] lint, format check, typecheck, build and the full test suite are green.
 
 ## Risks / unknowns
 
@@ -102,4 +102,36 @@ Out (each its own plan):
 
 ## Notes
 
+- **`dashboard list --archived` was documented but never read.** The old parser accepted it
+  and the command returned the unarchived list. Rather than guess at an unverified endpoint
+  filter, the flag is declared `planned` and refused as `USAGE` ("not available yet"); help
+  and the command spec say so.
+- **Missing positionals moved from `VALIDATION_ERROR` to `USAGE`** to match the house code
+  table. The exit code is 2 either way.
+- **`query --mbql --db <name>`** used to report `--db` as missing because only a numeric
+  `--db` was read on that path; it now resolves names like the native-SQL path.
+- **Flag shape decides flag-ness.** Only `--<letter>` or a lone `-x` is a flag, so a SQL
+  positional that opens with `-- comment` parses as SQL. This differs from the nexudus-axi
+  parser (any dash-led token) and follows the house lexical rules.
+- **Path-looking heuristic for the space form:** no whitespace, and contains a slash, starts
+  with `~` or `.`, or ends in `.json|.csv|.xlsx|.tsv|.txt`. Anything else after a bare
+  export flag stays a positional; if it then overflows the positional count the error still
+  names the `=` form.
+- Tests run the CLI in-process (`runAxiCli` with a captured stdout and a temp config dir);
+  the built binary is exercised by the CI smoke step.
+- otter-axi shares the old `src/flags.ts`; `src/flags.ts` (parser half), `formatError` in
+  `src/cli.ts` and `test/flags.test.ts` port directly.
+
 ## Follow-ups
+
+- **Deferred** — one `reference.ts` generating `--help`, home hints and the skill, with a
+  `docs:check` gate (issue #6, "Smaller").
+- **Deferred** — `--version` fast path; needs an `axi-sdk-js` bump for the `fast-path`
+  subpath (issue #6, "Smaller").
+- **Deferred** — reject contradictory flags (`--mine` with `--archived`, `--mbql` with a SQL
+  positional or `--params`, `--table` with `--search`, `--api-key` with `--username`).
+- **Deferred** — build `dashboard list --archived`, or drop it from the spec.
+- **Deferred** — harden auto-exports to the gws-axi form (per-user `0700` dir, exclusive
+  create, `export_error:`), and execute every printed `Run …` hint in a test.
+- **Deferred** — `readConfig` returns an empty default for a config that fails to parse, so
+  the next write replaces it; should be `CONFIG_INVALID` (fail-closed).
