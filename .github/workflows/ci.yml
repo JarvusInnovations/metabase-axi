@@ -40,3 +40,47 @@ jobs:
 
       - name: Test
         run: bun run test
+
+      - name: Smoke test the built binary
+        # `--version` alone is not enough — it never reaches command dispatch. Running real
+        # commands with no credentials exercises dispatch, flag parsing, and the
+        # error-formatting path, and must produce a structured error rather than a crash
+        # or a raw stack trace.
+        run: |
+          node dist/bin/metabase-axi.js --version
+          node dist/bin/metabase-axi.js --help > /dev/null
+
+          export METABASE_AXI_CONFIG_DIR="$RUNNER_TEMP/metabase-axi-smoke"
+          unset METABASE_URL METABASE_API_KEY METABASE_USERNAME METABASE_PASSWORD
+
+          check() {
+            want_code="$1"; want_error="$2"; shift 2
+            set +e
+            out=$(node dist/bin/metabase-axi.js "$@" 2>&1)
+            code=$?
+            set -e
+            echo "$ metabase-axi $*"
+            echo "$out"
+            if [ "$code" -ne "$want_code" ]; then
+              echo "::error::expected exit $want_code, got $code"
+              exit 1
+            fi
+            if ! echo "$out" | grep -q "code: $want_error"; then
+              echo "::error::expected a structured $want_error error"
+              exit 1
+            fi
+            # A leaked stack trace means an unhandled failure reached stdout, where an
+            # agent would try to read it as data.
+            if echo "$out" | grep -qE '^\s+at |node:internal'; then
+              echo "::error::a raw stack trace leaked to stdout"
+              exit 1
+            fi
+          }
+
+          # No credentials: a valid invocation fails as a failed operation (exit 1).
+          check 1 CONFIG db list
+          # A malformed invocation fails as usage (exit 2), before any config read.
+          check 2 UNKNOWN_FLAG card list --bogus
+          check 2 USAGE query "SELECT 1" --csv-out /tmp/orders.csv
+
+          echo "smoke test passed"
