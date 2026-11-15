@@ -21,13 +21,16 @@ export type Renderable = string | StructuredOutput;
 export const PREVIEW_ROW_CAP = 20;
 export const CELL_CHAR_CAP = 120;
 
-/** A structured "not implemented yet" notice for stub commands. */
+/**
+ * A structured "not available yet" notice for stub commands. It points at what works today
+ * and never at repo files: an agent using the published package has no `specs/` or `plans/`.
+ */
 export function notImplemented(command: string): StructuredOutput {
   return {
-    message: `\`metabase-axi ${command}\` is not implemented yet`,
+    message: `\`metabase-axi ${command}\` is not available yet — coming in an upcoming release`,
     help: [
-      "This command is planned — see specs/commands/ and plans/ for the spec",
-      "Run `metabase-axi --help` to see available commands",
+      "Available today: query, card, db, search, dashboard, collection, auth, doctor, setup",
+      "Run `metabase-axi --help` for the commands that work in this version",
     ],
   };
 }
